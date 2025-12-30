@@ -14,7 +14,7 @@ func GenerateCode() string {
 }
 
 // sendEmail отправляет письмо с кодом через SMTP
-func sendEmail(to, code string) error {
+func SendEmail(to, code string) error {
 	m := gomail.NewMessage()
 	m.SetHeader("From", "max80021151@gmail.com") 
 	m.SetHeader("To", to)
