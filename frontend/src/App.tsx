@@ -1,16 +1,36 @@
-import { useEffect, useState } from "react";
-import { getHealth } from "./api/health";
+import { Routes, Route } from "react-router-dom";
+import MainLayout from "./layouts/MainLayout";
+
+import LoginPage from "./pages/LoginPage";
+import HomePage from "./pages/HomePage";
+import ProfilePage from "./pages/ProfilePage";
+
+import ProtectedRoute from "./router/ProtectedRoute";
 
 function App() {
-  const [health, setHealth] = useState("loading...");
-
-  useEffect(() => {
-    getHealth().then(setHealth).catch(() => setHealth("error"));
-  }, []);
-  useEffect(() => {
-    console.log("VITE_API_URL =", import.meta.env.VITE_API_URL);
-  }, []);
-  return <h1>Backend status: {health}</h1>; 
+  return (
+    <Routes>
+      <Route path="/login" element={<LoginPage />} />
+      <Route element={<MainLayout/>}>
+        <Route
+          path="/"
+          element={
+            <ProtectedRoute>
+              <HomePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/profile"
+          element={
+            <ProtectedRoute>
+              <ProfilePage />
+            </ProtectedRoute>
+          }
+        />
+      </Route>
+    </Routes>
+  );
 }
 
 export default App;
