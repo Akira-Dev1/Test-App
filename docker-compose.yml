@@ -17,3 +17,31 @@ services:
     - ./frontend:/app
     - /app/node_modules
     command: npm run dev -- --host
+
+  auth:
+    build: ./auth
+    ports:
+      - "8081:8080"
+    depends_on:
+      - redis
+      - mongo
+    environment:
+      REDIS_ADDR: redis:6379
+      MONGO_URI: mongodb://mongo:27017
+    # volumes:
+    #   - ./auth:/app
+
+  redis:
+    image: redis:7
+    ports:
+      - "6379:6379"
+
+  mongo:
+    image: mongo:6
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+
+volumes:
+  mongo-data:
