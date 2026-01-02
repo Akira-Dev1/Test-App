@@ -3,7 +3,11 @@ services:
   backend:
     build: ./backend
     ports:
-      - "8080:8080"
+      - "18080:18080"
+    depends_on:
+      - postgres
+    networks:
+      - core_net
 
   frontend:
     build: ./frontend
@@ -17,15 +21,6 @@ services:
     - ./frontend:/app
     - /app/node_modules
     command: npm run dev -- --host
-
-  main_module:
-    build: ./backend/main_module
-    ports:
-      - "18080:18080"
-    depends_on:
-      - postgres
-    networks:
-      - core_net
 
   postgres:
     image: postgres:15

@@ -1,8 +1,44 @@
-FROM golang:1.25.5-alpine
+FROM ubuntu:22.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Установка инструментов
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    cmake \
+    git \
+    libpqxx-dev \
+    libpq-dev \
+    libssl-dev \
+    libboost-all-dev \
+    wget \
+    curl \
+    unzip \
+    zip \
+    tar \
+    pkg-config \
+    && rm -rf /var/lib/apt/lists/*
+
+
+# Установка vcpkg
+WORKDIR /opt
+RUN git clone --depth 1 https://github.com/microsoft/vcpkg.git && \
+    ./vcpkg/bootstrap-vcpkg.sh
+ENV PATH="/opt/vcpkg:$PATH"
+
+
 WORKDIR /app
-COPY go.mod go.sum ./
-RUN go mod download
-COPY ./cmd/server ./cmd/server
-WORKDIR /app/cmd/server
-RUN go build -o app
-CMD ["./app"]
+COPY . /app
+
+# Установка библеотек через vcpkg
+WORKDIR /appRUN /opt/vcpkg/vcpkg install --triplet x64-linux
+COPY . .
+
+# Сборка модуля
+RUN mkdir -p build
+WORKDIR /app/build
+RUN cmake .. -DCMAKE_TOOLCHAIN_FILE=/opt/vcpkg/scripts/buildsystems/vcpkg.cmake 
+RUN make -j$(nproc)
+
+# Запуск модуля
+CMD ["./core"]

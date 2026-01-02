@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { getHealth } from "../api/health";
 
 const footerStyle : React.CSSProperties = {
   position: "fixed",
@@ -14,19 +13,12 @@ const footerStyle : React.CSSProperties = {
   justifyContent: "center",
 }
 
-const Footer : React.FC = () => { 
-  const [health, setHealth] = useState("loading...");
-
-  useEffect(() => {
-    getHealth().then(setHealth).catch(() => setHealth("error"));
-  }, []);
-
+const Footer : React.FC = () => {
   return (
-    <>
-      <footer style={footerStyle}>
-        <p>Backend status: {health}</p>
-      </footer>
-    </>
+    <footer style={footerStyle}>
+      <p>Kvartirka 31</p>
+    </footer>
+
   );
 }
 
