@@ -14,3 +14,31 @@ services:
     env_file:
       - ./frontend/.env
     command: npm run dev -- --host
+
+  main_module:
+    build: ./backend/main_module
+    ports:
+      - "18080:18080"
+    depends_on:
+      - postgres
+    networks:
+      - core_net
+
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: core
+      POSTGRES_PASSWORD: core
+      POSTGRES_DB: core_db
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - core_net
+
+
+networks:
+  core_net:
+
+volumes:
+  pgdata:
