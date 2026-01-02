@@ -5,7 +5,7 @@ import (
 	"math/rand"
 	"net/http"
 	"time"
-
+	"fmt"
 	"auth/domain"
 	"auth/storage"
 )
@@ -17,6 +17,7 @@ type LoginRequest struct {
 type CodeResponse struct {
 	Code string `json:"code"`
 }
+
 
 func Login(w http.ResponseWriter, r *http.Request) {
 	loginType := r.URL.Query().Get("type")
@@ -44,7 +45,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	code := rand.Intn(900000) + 100000
 
 	codeState := domain.CodeState{
-		Code:       string(rune(code)),
+		Code: fmt.Sprintf("%06d", code),
 		EntryToken: req.EntryToken,
 		ExpiresAt:  time.Now().Add(1 * time.Minute),
 	}
