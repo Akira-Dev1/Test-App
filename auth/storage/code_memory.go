@@ -13,16 +13,16 @@ var (
 )
 
 func SaveCode(code domain.CodeState) {
-	codeMu.Lock()
-	defer codeMu.Unlock()
-	codes[code.Code] = code
+    codeMu.Lock()
+    defer codeMu.Unlock()
+    codes[code.EntryToken] = code
 }
 
-func GetCode(code string) (domain.CodeState, bool) {
-	codeMu.RLock()
-	defer codeMu.RUnlock()
-	state, ok := codes[code]
-	return state, ok
+func GetCode(entryToken string) (domain.CodeState, bool) {
+    codeMu.RLock()
+    defer codeMu.RUnlock()
+    state, ok := codes[entryToken]
+    return state, ok
 }
 
 func DeleteCode(code string) {
@@ -41,4 +41,15 @@ func CleanupExpiredCodes() {
 			delete(codes, k)
 		}
 	}
+}
+
+
+func AllCodes() map[string]domain.CodeState {
+    codeMu.RLock()
+    defer codeMu.RUnlock()
+    copyMap := make(map[string]domain.CodeState)
+    for k, v := range codes {
+        copyMap[k] = v
+    }
+    return copyMap
 }
