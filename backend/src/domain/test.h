@@ -3,6 +3,8 @@
 
 struct Test {
     int id;
-    std::string name;
-    std::string description;
+    int course_id;
+    std::string title;
+    bool is_active;
+    bool is_deleted;
 };

@@ -13,12 +13,14 @@ public:
     ~DB();
 
     // Тетсты
-    std::vector<Test> getTests();
-    Test getTestById(int id);
-    std::vector<Test> getTestsByCourse(int courseId);
-    void createTest(int courseId, const std::string& name, const std::string& description, int authorId);
-    void deleteTest(int id);
+    Test getTestById(int testId);
+    bool updateTestStatus(int testId, bool isActive);
+    void finalizeAllTestAttempts(int testId);
+    std::vector<Test> getTestsByCourseId(int courseId);
+    int createTest(int courseId, const std::string& title, int authorId);
+    bool deleteTest(int testId);
     void setTestActivity(int testId, bool active);
+    bool isUserEnrolled(int courseId, int userId);
 
     // Курсы
     std::vector<Course> getCourses();

@@ -21,7 +21,7 @@ inline crow::response checkAccess(
     if (ctx.permissions.find(rule.permission) != ctx.permissions.end()) {
         return crow::response(200);
     }
-    if (rule.checkDefault(ctx, resourceOwnerId)) {
+    if (rule.checkDefault && rule.checkDefault(ctx, resourceOwnerId)) {
         return crow::response(200);
     }
     if (rule.defaultAllowed) {

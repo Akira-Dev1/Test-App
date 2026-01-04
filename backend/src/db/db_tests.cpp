@@ -1,88 +1,65 @@
 #include "db.h"
 
-
-
-// Получение всех тестов
-std::vector<Test> DB::getTests() {
-    ensureConnection();
-    std::vector<Test> tests;
-    PGresult* res = PQexec((PGconn*)conn, "SELECT id, title, description FROM tests");
-
-    if (PQresultStatus(res) != PGRES_TUPLES_OK) {
-        std::cerr << "SELECT failed: " << PQerrorMessage((PGconn*)conn) << std::endl;
-        PQclear(res);
-        return tests;
-    }
-    for (int i = 0; i < PQntuples(res); i++) {
-        const char* id_val = PQgetvalue(res, i, 0);
-        const char* name_val = PQgetvalue(res, i, 1);
-        const char* desc_val = PQgetvalue(res, i, 2);
-        tests.push_back({
-            id_val ? std::stoi(id_val) : 0,
-            name_val ? name_val : "",
-            desc_val ? desc_val : ""
-        });
-    }
-    PQclear(res);
-    return tests;
-}
-
-
-// Получение теста по айди
+// Получение теста по айди ccc
 Test DB::getTestById(int testId) {
     ensureConnection();
+    
     std::string idStr = std::to_string(testId);
-    const char* paramValues[1] = { idStr.c_str() };
+    const char* params[] = { idStr.c_str() };
 
+    const char* sql = 
+        "SELECT id, course_id, title, is_active, is_deleted FROM tests WHERE id = $1";
     PGresult* res = PQexecParams(
         (PGconn*)conn,
-        "SELECT id, title, description FROM tests WHERE id = $1",
-        1, nullptr, paramValues, nullptr, nullptr, 0
+        sql,
+        1, nullptr, params, nullptr, nullptr, 0
     );
 
     if (PQresultStatus(res) != PGRES_TUPLES_OK || PQntuples(res) == 0) {
         PQclear(res);
-        throw std::runtime_error("Test not found");
+        return {0, 0, "", false, false}; 
     }
 
-    Test t{
-        std::stoi(PQgetvalue(res, 0, 0)),
-        PQgetvalue(res, 0, 1),
-        PQgetvalue(res, 0, 2)
-    };
+    Test t;
+    t.id = std::stoi(PQgetvalue(res, 0, 0));
+    t.course_id = std::stoi(PQgetvalue(res, 0, 1));
+    t.title = PQgetvalue(res, 0, 2);
+    t.is_active = (std::string(PQgetvalue(res, 0, 3)) == "t");
+    t.is_deleted = (std::string(PQgetvalue(res, 0, 4)) == "t");
+
     PQclear(res);
     return t;
 }
 
 
 // Получение тестов по айди курса
-std::vector<Test> DB::getTestsByCourse(int courseId) {
+std::vector<Test> DB::getTestsByCourseId(int courseId) {
     ensureConnection();
-    std::vector<Test> tests;
-    std::string idStr = std::to_string(courseId);
-    const char* paramValues[1];
-    paramValues[0] = idStr.c_str();
+
+    std::string cId = std::to_string(courseId);
+    const char* params[] = { cId.c_str() };
+
+    const char* sql = 
+        "SELECT id, title FROM tests WHERE course_id = $1 AND is_deleted = false";
 
     PGresult* res = PQexecParams(
-        (PGconn*)conn,
-        "SELECT id, title, description FROM tests WHERE course_id = $1",
-        1, nullptr,
-        paramValues,
-        nullptr, nullptr, 0
+        (PGconn*)conn, 
+        sql,
+        1, nullptr, params, nullptr, nullptr, 0
     );
 
-    if (PQresultStatus(res) != PGRES_TUPLES_OK) {
-        std::cerr << "SELECT tests by course failed: " << PQerrorMessage((PGconn*)conn) << std::endl;
-        PQclear(res);
-        return tests;
-    }
-    
-    for (int i = 0; i < PQntuples(res); i++) {
-        tests.push_back({
-            std::stoi(PQgetvalue(res, i, 0)),
-            PQgetvalue(res, i, 1),
-            PQgetvalue(res, i, 2)
-        });
+    std::vector<Test> tests;
+
+    if (PQresultStatus(res) == PGRES_TUPLES_OK) {
+        for (int i = 0; i < PQntuples(res); i++) {
+            tests.push_back(Test{
+                std::stoi(PQgetvalue(res, i, 0)),
+                courseId,
+                PQgetvalue(res, i, 1),
+                false,
+                false
+            });
+        }
     }
 
     PQclear(res);
@@ -90,60 +67,110 @@ std::vector<Test> DB::getTestsByCourse(int courseId) {
 }
 
 
-// Создание теста (привязанного к курсу)
-void DB::createTest(int courseId, const std::string& title, const std::string& description, int authorId) {
+// Создание теста (привязанного к курсу) ccc
+int DB::createTest(int courseId, const std::string& title, int authorId) {
     ensureConnection();
-    const char* paramValues[4] = { std::to_string(courseId).c_str(), title.c_str(), description.c_str(), std::to_string(authorId).c_str() };
 
+    std::string cIdStr = std::to_string(courseId);
+    std::string aIdStr = std::to_string(authorId);
+    const char* paramValues[3] = { 
+        cIdStr.c_str(), 
+        title.c_str(), 
+        aIdStr.c_str() 
+    };
+
+    const char* sql = 
+        "INSERT INTO tests (course_id, title, author_id) "
+        "VALUES ($1, $2, $3) RETURNING id";
+    
     PGresult* res = PQexecParams(
-        (PGconn*)conn,
-        "INSERT INTO tests(course_id, title, description, author_id) VALUES ($1, $2, $3, $4)",
-        3, nullptr, paramValues, nullptr, nullptr, 0
-    );
+        (PGconn*)conn, 
+        sql, 
+        3, nullptr, paramValues, nullptr, nullptr, 0);
 
-    if (PQresultStatus(res) != PGRES_COMMAND_OK) {
+    int newId = -1;
+    if (PQresultStatus(res) == PGRES_TUPLES_OK) {
+        newId = std::stoi(PQgetvalue(res, 0, 0));
+    } else {
         std::cerr << "Create test failed: " << PQerrorMessage((PGconn*)conn) << std::endl;
     }
     PQclear(res);
+    return newId;
 }
 
 
-// Удаление теста
-void DB::deleteTest(int testId) {
+// Удаление теста ccc
+bool DB::deleteTest(int testId) {
     ensureConnection();
-    std::string idStr = std::to_string(testId);
-    const char* paramValues[1] = { idStr.c_str() };
+
+    std::string tIdStr = std::to_string(testId);
+    const char* paramValues[] = { tIdStr.c_str() };
+
+    const char* sql = 
+        "UPDATE tests SET is_deleted = true WHERE id = $1";
 
     PGresult* res = PQexecParams(
-        (PGconn*)conn,
-        "UPDATE tests SET is_deleted = true WHERE id = $1",
+        (PGconn*)conn, 
+        sql, 
         1, nullptr, paramValues, nullptr, nullptr, 0
     );
 
-    if (PQresultStatus(res) != PGRES_COMMAND_OK) {
-        std::cerr << "DELETE test failed: " << PQerrorMessage((PGconn*)conn) << std::endl;
-    }
+    bool success = (PQresultStatus(res) == PGRES_COMMAND_OK && std::string(PQcmdTuples(res)) == "1");
     PQclear(res);
+    return success;
 }
 
-// Установка активности теста
-void DB::setTestActivity(int testId, bool active) {
+// Установка активности теста ccc
+bool DB::updateTestStatus(int testId, bool isActive) {
     ensureConnection();
-    std::string idStr = std::to_string(testId);
-    std::string activeStr = active ? "true" : "false";
-    const char* paramValues[2] = { idStr.c_str(), activeStr.c_str() };
+    std::string tId = std::to_string(testId);
+    const char* status = isActive ? "true" : "false";
+    const char* params[] = { status, tId.c_str() };
 
     const char* sql = 
-        "BEGIN; "
-        "UPDATE tests SET is_active = $2 WHERE id = $1; "
-        "UPDATE test_attempts SET status = 'completed' "
-        "WHERE test_id = $1 AND status = 'in_progress' AND $2 = false; "
-        "COMMIT;";
+        "UPDATE tests SET is_active = $1 WHERE id = $2 AND is_deleted = false";
+    PGresult* res = PQexecParams(
+        (PGconn*)conn,
+        sql,
+        2, nullptr, params, nullptr, nullptr, 0
+    );
 
-    PGresult* res = PQexecParams((PGconn*)conn, sql, 2, nullptr, paramValues, nullptr, nullptr, 0);
-
-    if (PQresultStatus(res) != PGRES_COMMAND_OK) {
-        std::cerr << "Set activity failed: " << PQerrorMessage((PGconn*)conn) << std::endl;
-    }
+    bool success = (PQresultStatus(res) == PGRES_COMMAND_OK && std::string(PQcmdTuples(res)) == "1");
     PQclear(res);
+    return success;
+}
+// Завершение всех попыток
+void DB::finalizeAllTestAttempts(int testId) {
+    ensureConnection();
+    std::string tId = std::to_string(testId);
+    const char* params[] = { tId.c_str() };
+
+    const char* sql = 
+        "UPDATE test_attempts SET status = 'completed' "
+        "WHERE test_id = $1 AND status = 'in_progress'";
+    PQexecParams(
+        (PGconn*)conn,
+        sql,
+        1, nullptr, params, nullptr, nullptr, 0
+    );
+}
+
+// Проверка записи на курс ccc
+bool DB::isUserEnrolled(int courseId, int userId) {
+    ensureConnection();
+
+    std::string cId = std::to_string(courseId);
+    std::string uId = std::to_string(userId);
+    const char* params[] = { cId.c_str(), uId.c_str() };
+
+    const char* sql = 
+        "SELECT 1 FROM course_students WHERE course_id = $1 AND user_id = $2";
+    PGresult* res = PQexecParams(
+        (PGconn*)conn, 
+        sql,
+        2, nullptr, params, nullptr, nullptr, 0
+    );
+    bool enrolled = (PQresultStatus(res) == PGRES_TUPLES_OK && PQntuples(res) > 0);
+    PQclear(res);
+    return enrolled;
 }
