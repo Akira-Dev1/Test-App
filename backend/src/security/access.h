@@ -10,25 +10,27 @@ struct PermissionRule {
     std::function<bool(const UserContext&, int)> checkDefault;
 };
 
-inline bool checkAccess(
+inline crow::response checkAccess(
     const UserContext& ctx,
     const PermissionRule& rule,
     int resourceOwnerId = -1
 ) {
     if (ctx.blocked) {
-        return false;
+        return crow::response(403);
     }
     if (ctx.permissions.find(rule.permission) != ctx.permissions.end()) {
-        return true;
+        return crow::response(200);
     }
-
+    if (rule.checkDefault(ctx, resourceOwnerId)) {
+        return crow::response(200);
+    }
     if (rule.defaultAllowed) {
         if (!rule.checkDefault) {
-            return true;
+            return crow::response(200);
         }
-        return rule.checkDefault(ctx, resourceOwnerId);
+        return rule.checkDefault(ctx, resourceOwnerId) ? crow::response(200) : crow::response(403);
     }
-    return false;
+    return crow::response(403);
 }
 
 inline bool hasPermission(
@@ -39,5 +41,5 @@ inline bool hasPermission(
     PermissionRule rule;
     rule.permission = permission;
     rule.defaultAllowed = false;
-    return checkAccess(ctx, rule, resourceOwnerId);
+    return checkAccess(ctx, rule, resourceOwnerId).code == 200;
 }

@@ -11,7 +11,7 @@ inline void registerTestRoutes(crow::SimpleApp& app, DB& db) {
         for (auto& t : tests) {
             crow::json::wvalue item;
             item["id"] = t.id;
-            item["name"] = t.name;
+            item["title"] = t.name;
             item["description"] = t.description;
             test_list.push_back(std::move(item));
         }
@@ -30,7 +30,7 @@ inline void registerTestRoutes(crow::SimpleApp& app, DB& db) {
         for (auto& t : tests) {
             crow::json::wvalue item;
             item["id"] = t.id;
-            item["name"] = t.name;
+            item["title"] = t.name;
             item["description"] = t.description;
             test_list.push_back(std::move(item));
         }
@@ -41,14 +41,20 @@ inline void registerTestRoutes(crow::SimpleApp& app, DB& db) {
     // Создание теста по курсу
     CROW_ROUTE(app, "/courses/<int>/tests").methods("POST"_method)
     ([&db](const crow::request& req, int courseId) {
+        auto userIdPtr = req.url_params.get("current_user_id");
+        if (!userIdPtr) {
+            return crow::response(401, "User not identified");
+        }
+        int userId = std::stoi(userIdPtr);
         auto body = crow::json::load(req.body);
         if (!body) {
             return crow::response(400, "Invalid JSON");
         }
         db.createTest(
             courseId,
-            body["name"].s(),
-            body["description"].s()
+            body["title"].s(),
+            body["description"].s(),
+            userId
         );
         return crow::response(201);
     });

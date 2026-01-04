@@ -1,13 +1,5 @@
 version: "3.9"
 services:
-  backend:
-    build: ./backend
-    ports:
-      - "18080:18080"
-    depends_on:
-      - postgres
-    networks:
-      - core_net
 
   frontend:
     build: ./frontend
@@ -24,16 +16,26 @@ services:
 
   postgres:
     image: postgres:15
+    ports:
+      - "5432:5432"
     environment:
       POSTGRES_USER: core
       POSTGRES_PASSWORD: core
       POSTGRES_DB: core_db
     volumes:
       - pgdata:/var/lib/postgresql/data
-      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./backend/db/init.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
       - core_net
 
+  backend:
+    build: ./backend
+    ports:
+      - "18080:18080"
+    depends_on:
+      - postgres
+    networks:
+      - core_net
 
 networks:
   core_net:

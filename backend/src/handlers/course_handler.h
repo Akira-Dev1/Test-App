@@ -6,68 +6,126 @@
 #include "../security/auth_guard.h"
 
 inline void registerCourseRoutes(crow::SimpleApp& app, DB& db) {
-
     // Получение всех курсов (название, описание)
     CROW_ROUTE(app, "/courses").methods("GET"_method)
     ([&db](const crow::request& req){
+        UserContext ctx;
+        auto auth = authGuard(req, ctx);
+        if (auth.code != 200) {
+            return auth;
+        }
         auto courses = db.getCourses();
         std::vector<crow::json::wvalue> course_list;
         for (auto& c : courses) {
-            crow::json::wvalue item;
-            item["id"] = c.id;
-            item["name"] = c.name;
-            item["description"] = c.description;
-            course_list.push_back(std::move(item));
+            if (c.id != 0 && !c.is_deleted) {
+                crow::json::wvalue item;
+                item["id"] = c.id;
+                item["title"] = c.title;
+                item["description"] = c.description;
+                course_list.push_back(std::move(item));
+            }
         }
         crow::json::wvalue final_res;
         final_res["courses"] = std::move(course_list);
-        return final_res;
+        return crow::response(final_res);
     });
-
+    // Получение курса по айди
+    CROW_ROUTE(app, "/courses/<int>").methods("GET"_method)
+    ([&db](const crow::request& req, int courseId) {
+        UserContext ctx;
+        auto auth = authGuard(req, ctx);
+        if (auth.code != 200) {
+            return auth;
+        }
+        auto course = db.getCourseById(courseId);
+        if (course.id == 0 || course.is_deleted) {
+            return crow::response(404, "Course not found");
+        }
+        crow::json::wvalue json_data;
+        json_data["id"] = course.id;
+        json_data["title"] = course.title;
+        json_data["description"] = course.description;
+        json_data["author_id"] = course.author_id;
+        return crow::response(json_data);
+    });
     // Создание курса
     CROW_ROUTE(app, "/courses").methods("POST"_method)
     ([&db](const crow::request& req) {
-        auto userIdPtr = req.url_params.get("current_user_id");
-        if (!userIdPtr) {
-            return crow::response(401, "User not identified");
-        }
-        int userId = std::stoi(userIdPtr);
         UserContext ctx;
-        auto res = authGuard(req, ctx);
-        if (res.code != 200) {
-            return res;
+        auto auth = authGuard(req, ctx);
+        if (auth.code != 200) {
+            return auth;
         }
         PermissionRule rule {
             "course:add",
             false,
-            [](const UserContext& ctx, int ownerId) {
-                return ctx.userId == ownerId;
-            }
+            nullptr
         };
-        if (!checkAccess(ctx, rule, userId)) {
-            return res;
+        auto check = checkAccess(ctx, rule, 0).code;
+        if (check != 200) {
+            return crow::response(check);
         } 
         auto body = crow::json::load(req.body);
         if (!body) {
             return crow::response(400, "Invalid JSON");
         }
-        db.createCourse(body["name"].s(), body["description"].s());
-        return crow::response(201);
+        int id = db.createCourse(
+            body["title"].s(),
+            body["description"].s(),
+            ctx.userId
+        );
+        crow::json::wvalue res;
+        res["id"] = id;
+        return crow::response(201, res);
     });
+    // Изменить курс
+    CROW_ROUTE(app, "/courses/<int>").methods("PATCH"_method)
+    ([&db](const crow::request& req, int courseId) {
+        UserContext ctx;
+        auto auth = authGuard(req, ctx);
+        if (auth.code != 200) return auth;
 
+        auto course = db.getCourseById(courseId);
+        if (course.id == 0 || course.is_deleted) {
+            return crow::response(404, "Course not found");
+        }
+        
+        auto body = crow::json::load(req.body);
+        if (!body) return crow::response(400, "Invalid JSON");
+
+
+        PermissionRule rule {
+            "course:info:write",
+            false,
+            [](const UserContext& ctx, int ownerId) {
+                return ctx.userId == ownerId;
+            }
+        };
+        if (checkAccess(ctx, rule, course.author_id).code != 200) {
+            return crow::response(403, "Forbidden");
+        } 
+
+        std::string title = body.has("title") ? body["title"].s() : course.title;
+        std::string description = body.has("description") ? body["description"].s() : course.description;
+
+        if (db.updateCourse(courseId, title, description)) {
+            return crow::response(204);
+        } else {
+            return crow::response(404, "Failed to update: Course not found or already deleted");
+        }
+    });
     // Удаление курса
     CROW_ROUTE(app, "/courses/<int>").methods("DELETE"_method)
-    ([&db](const crow::request& req, int id) {
-        auto userIdPtr = req.url_params.get("current_user_id");
-        if (!userIdPtr) {
-            return crow::response(401, "User not identified");
-        }
-        int userId = std::stoi(userIdPtr);
+    ([&db](const crow::request& req, int courseId) {
         UserContext ctx;
-        auto res = authGuard(req, ctx);
-        if (res.code != 200) {
-            return res;
+        auto auth = authGuard(req, ctx);
+        if (auth.code != 200) return auth;
+
+        auto course = db.getCourseById(courseId);
+        if (course.id == 0 || course.is_deleted) {
+            return crow::response(404, "Course not found");
         }
+
         PermissionRule rule {
             "course:del",
             false,
@@ -75,10 +133,94 @@ inline void registerCourseRoutes(crow::SimpleApp& app, DB& db) {
                 return ctx.userId == ownerId;
             }
         };
-        if (!checkAccess(ctx, rule, userId)) {
-            return res;
+        if (checkAccess(ctx, rule, course.author_id).code != 200) {
+            return crow::response(403);
         } 
-        db.deleteTest(id);
+        db.deleteCourse(courseId);
         return crow::response(204);
+    });
+    // Добавить пользователя на курс
+    CROW_ROUTE(app, "/courses/<int>/join").methods("POST"_method)
+    ([&db](const crow::request& req, int courseId) {
+        UserContext ctx;
+        auto auth = authGuard(req, ctx);
+        if (auth.code != 200) return auth;
+
+        auto json_data = crow::json::load(req.body);
+        if (!json_data || !json_data.has("user_id")) {
+            return crow::response(400, "Missing user_id in request body");
+        }
+
+        int target_user_id = (int)json_data["user_id"].i();
+
+        if (ctx.userId != target_user_id) {
+            PermissionRule rule{
+                "course:user:add",
+                false,
+                nullptr
+            };
+            if (checkAccess(ctx, rule, 0).code != 200) {
+                return crow::response(403);
+            }
+        }
+        if (!db.addStudentToCourse(courseId, target_user_id)) {
+            return crow::response(404, "Course not found, is deleted, or user already joined");
+        }
+        return crow::response(204);
+    });
+    // Удалить пользователя из курса
+    CROW_ROUTE(app, "/courses/<int>/leave").methods("DELETE"_method)
+    ([&db](const crow::request& req, int courseId) {
+        UserContext ctx;
+        auto auth = authGuard(req, ctx);
+        if (auth.code != 200) return auth;
+
+        auto json_data = crow::json::load(req.body);
+        if (!json_data || !json_data.has("user_id")) {
+            return crow::response(400, "Missing user_id in request body");
+        }
+
+        int target_user_id = (int)json_data["user_id"].i();
+
+        if (ctx.userId != target_user_id) {
+            PermissionRule rule{
+                "course:user:del",
+                false,
+                nullptr
+            };
+            if (checkAccess(ctx, rule, 0).code != 200) {
+                return crow::response(403);
+            }
+        }
+        db.removeStudentFromCourse(courseId, target_user_id);
+        return crow::response(204);
+    });
+    // Список студентов на курсе
+    CROW_ROUTE(app, "/courses/<int>/students").methods("GET"_method)
+    ([&db](const crow::request& req, int courseId) {
+        UserContext ctx;
+        auto auth = authGuard(req, ctx);
+        if (auth.code != 200) return auth;
+
+        auto course = db.getCourseById(courseId);
+        if (course.id == 0 || course.is_deleted) {
+            return crow::response(404, "Course not found");
+        }
+
+        if (ctx.userId != course.author_id) {
+            PermissionRule rule{
+                "course:userList",
+                false,
+                nullptr
+            };
+            if (checkAccess(ctx, rule, 0).code != 200) {
+                return crow::response(403, "Forbidden");
+            }
+        }
+        std::vector<int> studentIds = db.getStudentIdsByCourseId(courseId);
+        crow::json::wvalue response;
+        response["student_ids"] = std::move(studentIds); 
+
+        return crow::response(200, response);
     });
 }

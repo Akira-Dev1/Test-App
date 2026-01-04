@@ -3,6 +3,8 @@
 
 struct Course {
     int id;
-    std::string name;
+    std::string title;
     std::string description;
+    int author_id;
+    bool is_deleted;
 };
