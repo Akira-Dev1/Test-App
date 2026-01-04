@@ -12,10 +12,10 @@ var (
 	authMu sync.RWMutex
 )
 
-func SaveAuthState(state domain.AuthState) {
+func SaveAuthState(state domain.AuthState, token string) {
 	authMu.Lock()
 	defer authMu.Unlock()
-	authStates[state.EntryToken] = state
+	authStates[token] = state
 }
 
 func GetAuthState(entryToken string) (domain.AuthState, bool) {

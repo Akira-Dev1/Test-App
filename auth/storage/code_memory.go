@@ -12,16 +12,16 @@ var (
 	codeMu sync.RWMutex
 )
 
-func SaveCode(code domain.CodeState) {
+func SaveCode(codeState domain.CodeState, code string) {
     codeMu.Lock()
     defer codeMu.Unlock()
-    codes[code.EntryToken] = code
+    codes[code] = codeState
 }
 
-func GetCode(entryToken string) (domain.CodeState, bool) {
+func GetCode(code string) (domain.CodeState, bool) {
     codeMu.RLock()
     defer codeMu.RUnlock()
-    state, ok := codes[entryToken]
+    state, ok := codes[code]
     return state, ok
 }
 
