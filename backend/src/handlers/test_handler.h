@@ -190,4 +190,214 @@ inline void registerTestRoutes(crow::SimpleApp& app, DB& db) {
 
         return crow::response(204);
     });
+    // Удаление вопроса из теста
+    CROW_ROUTE(app, "/tests/<int>/questions/<int>").methods("DELETE"_method)
+    ([&db](const crow::request& req, int testId, int questionId) {
+        UserContext ctx;
+        auto auth = authGuard(req, ctx);
+        if (auth.code != 200) return auth;
+
+        auto test = db.getTestById(testId);
+        if (test.id == 0) return crow::response(404, "Test not found");
+
+        auto course = db.getCourseById(test.course_id);
+
+        if (ctx.userId != course.author_id) {
+            PermissionRule rule{
+                "test:quest:del", 
+                false, 
+                nullptr
+            };
+            if (checkAccess(ctx, rule, 0).code != 200) {
+                return crow::response(403, "Forbidden: You must be a course teacher or have test:quest:del permission");
+            }
+        }
+
+        if (db.removeQuestionFromTest(testId, questionId)) {
+            return crow::response(204);
+        } else {
+            return crow::response(400, "Cannot remove question: test already has attempts");
+        }
+    });
+    // Добавление вопроса в тест
+    CROW_ROUTE(app, "/tests/<int>/questions/<int>").methods("POST"_method)
+    ([&db](const crow::request& req, int testId, int questionId) {
+        UserContext ctx;
+        auto auth = authGuard(req, ctx);
+        if (auth.code != 200) return auth;
+
+        auto test = db.getTestById(testId);
+        auto question = db.getQuestionById(questionId);
+        if (test.id == 0 || question.id == 0) return crow::response(404, "Test or Question not found");
+
+        auto course = db.getCourseById(test.course_id);
+
+        if (ctx.userId != course.author_id || ctx.userId != question.author_id) {
+            PermissionRule rule{
+                "test:quest:add", 
+                false, 
+                nullptr
+            };
+            if (checkAccess(ctx, rule, 0).code != 200) {
+                return crow::response(403, "Forbidden: You must be the course teacher AND the question author");
+            }
+        }
+
+        if (db.addQuestionToTest(testId, questionId)) {
+            return crow::response(201, "Question added to test");
+        } else {
+            return crow::response(400, "Cannot add question: test already has attempts");
+        }
+    });
+    // Изменение порядка вопросов в тесте
+    CROW_ROUTE(app, "/tests/<int>/questions/reorder").methods("PATCH"_method)
+    ([&db](const crow::request& req, int testId) {
+        UserContext ctx;
+        auto auth = authGuard(req, ctx);
+        if (auth.code != 200) return auth;
+
+        auto test = db.getTestById(testId);
+        if (test.id == 0) return crow::response(404, "Test not found");
+        auto course = db.getCourseById(test.course_id);
+
+        if (ctx.userId != course.author_id) {
+            PermissionRule rule{
+                "test:quest:update", 
+                false, 
+                nullptr
+            };
+            if (checkAccess(ctx, rule, 0).code != 200) {
+                return crow::response(403, "Forbidden: Only course teacher can reorder questions");
+            }
+        }
+
+        auto body = crow::json::load(req.body);
+        if (!body || !body.has("question_ids")) {
+            return crow::response(400, "Missing 'question_ids' array");
+        }
+
+        std::vector<int> qIds;
+        for (auto& item : body["question_ids"]) {
+            qIds.push_back(item.i());
+        }
+
+        if (db.reorderQuestionsInTest(testId, qIds)) {
+            return crow::response(204);
+        } else {
+            return crow::response(400, "Cannot reorder: test has attempts or database error");
+        }
+        return crow::response(500, "Unexpected error"); 
+    });
+    // Список пользователей прошедших тест
+    CROW_ROUTE(app, "/tests/<int>/passed-users").methods("GET"_method)
+    ([&db](const crow::request& req, int testId) {
+        UserContext ctx;
+        auto auth = authGuard(req, ctx);
+        if (auth.code != 200) return auth;
+
+        auto test = db.getTestById(testId);
+        if (test.id == 0) return crow::response(404, "Test not found");
+
+        auto course = db.getCourseById(test.course_id);
+
+        if (ctx.userId != course.author_id) {
+            PermissionRule rule{
+                "test:answer:read", 
+                false, 
+                nullptr
+            };
+            if (checkAccess(ctx, rule, 0).code != 200) {
+                return crow::response(403, "Forbidden: Only course teacher can view results");
+            }
+        }
+
+        std::vector<int> users = db.getUsersWhoPassedTest(testId);
+
+        crow::json::wvalue res;
+        res["user_ids"] = std::move(users);
+        return crow::response(200, res);
+    });
+    // Оценки пользователей (свои оценки)
+    CROW_ROUTE(app, "/tests/<int>/scores").methods("GET"_method)
+    ([&db](const crow::request& req, int testId) {
+        UserContext ctx;
+        auto auth = authGuard(req, ctx);
+        if (auth.code != 200) return auth;
+
+        auto test = db.getTestById(testId);
+        if (test.id == 0) return crow::response(404, "Test not found");
+        auto course = db.getCourseById(test.course_id);
+
+        PermissionRule rule{
+            "test:answer:read", 
+            false, 
+            nullptr
+        };
+
+        bool hasGlobalRead = (checkAccess(ctx, rule, 0).code == 200);
+        bool isAuthor = (ctx.userId == course.author_id || hasGlobalRead);
+
+        auto scores = db.getTestScores(testId, ctx.userId, isAuthor);
+
+        if (!isAuthor && scores.empty()) {
+            return crow::response(403, "Access denied or no completed attempts");
+        }
+
+        crow::json::wvalue::list scores_json;
+        for (const auto& s : scores) {
+            crow::json::wvalue item;
+            item["user_id"] = s.user_id;
+            item["score"] = s.score;
+            scores_json.push_back(std::move(item));
+        }
+
+        crow::json::wvalue res;
+        res["scores"] = std::move(scores_json);
+        return crow::response(200, res);
+    });
+    // Посмотреть ответы пользователей (или свои ответы)
+    CROW_ROUTE(app, "/tests/<int>/answers").methods("GET"_method)
+    ([&db](const crow::request& req, int testId) {
+        UserContext ctx;
+        auto auth = authGuard(req, ctx);
+        if (auth.code != 200) return auth;
+
+        auto test = db.getTestById(testId);
+        if (test.id == 0) return crow::response(404, "Test not found");
+        auto course = db.getCourseById(test.course_id);
+
+        PermissionRule rule{
+            "test:answer:read", 
+            false, 
+            nullptr
+        };
+        bool hasGlobalRead = (checkAccess(ctx, rule, 0).code == 200);
+        bool isAuthor = (ctx.userId == course.author_id || hasGlobalRead);
+
+        auto details = db.getTestAttemptDetails(testId, ctx.userId, isAuthor);
+
+        if (!isAuthor && details.empty()) {
+            return crow::response(403, "Access denied: You can only view your own answers");
+        }
+
+        crow::json::wvalue::list final_list;
+        for (const auto& att : details) {
+            crow::json::wvalue item;
+            item["user_id"] = att.user_id;
+            
+            crow::json::wvalue::list ans_json;
+            for (const auto& ans : att.answers) {
+                crow::json::wvalue a;
+                a["question"] = ans.question_text;
+                a["answer"] = ans.user_answer_text;
+                ans_json.push_back(std::move(a));
+            }
+            item["answers"] = std::move(ans_json);
+            final_list.push_back(std::move(item));
+        }
+
+        crow::json::wvalue res;
+        res["attempts"] = std::move(final_list);
+        return crow::response(200, res);
+    });
 }

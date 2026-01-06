@@ -1,5 +1,6 @@
 #pragma once
 #include <string>
+#include <vector>
 
 struct Test {
     int id;
@@ -7,4 +8,14 @@ struct Test {
     std::string title;
     bool is_active;
     bool is_deleted;
+};
+
+struct UserAnswer {
+    std::string question_text;
+    std::string user_answer_text;
+};
+
+struct AttemptDetails {
+    int user_id;
+    std::vector<UserAnswer> answers;
 };

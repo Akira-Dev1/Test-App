@@ -9,6 +9,11 @@
 #include "../domain/course.h"
 #include "../domain/question.h"
 
+struct UserScore {
+    int user_id;
+    double score;
+};
+
 class DB {
 public:
     DB(const std::string& conninfo);
@@ -23,6 +28,13 @@ public:
     bool deleteTest(int testId);
     void setTestActivity(int testId, bool active);
     bool isUserEnrolled(int courseId, int userId);
+
+    bool removeQuestionFromTest(int testId, int questionId);
+    bool addQuestionToTest(int testId, int questionId);
+    bool reorderQuestionsInTest(int testId, const std::vector<int>& questionIds);
+    std::vector<int> getUsersWhoPassedTest(int testId);
+    std::vector<UserScore> getTestScores(int testId, int userIdFilter, bool isAuthor);
+    std::vector<AttemptDetails> getTestAttemptDetails(int testId, int userIdFilter, bool isAuthor);
 
     // Курсы
     std::vector<Course> getCourses();
