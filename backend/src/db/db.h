@@ -1,4 +1,5 @@
 #pragma once
+#include "crow.h"
 #include <vector>
 #include <string>
 #include <libpq-fe.h>
@@ -6,6 +7,7 @@
 #include <iostream>
 #include "../domain/test.h"
 #include "../domain/course.h"
+#include "../domain/question.h"
 
 class DB {
 public:
@@ -33,8 +35,13 @@ public:
     std::vector<int> getStudentIdsByCourseId(int courseId);
 
     // Вопросы
-    void addQuestionToTest(int testId, int questionId);
-    void updateQuestionsOrder(int testId, const std::string& pgArray);
+    int createQuestion(int authorId, const std::string& title, const std::string& content, const std::vector<std::string>& options, int correctOption);
+    bool deleteQuestion(int questionId);
+    int updateQuestion(int questionId, int userId, const std::string& title, const std::string& content, const std::vector<std::string>& options, int correctOption);
+    std::vector<Question> getQuestionsList(int userId, bool canSeeAll);
+    Question getQuestionById(int questionId);
+    Question getQuestionByIdAndVersion(int questionId, int version);
+    bool hasUserAttemptForQuestion(int userId, int questionId);
 
     // Ответы
 

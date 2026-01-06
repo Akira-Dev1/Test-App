@@ -2,6 +2,7 @@
 #include "db/db.h"
 #include "handlers/test_handler.h"
 #include "handlers/course_handler.h"
+#include "handlers/question_handler.h"
 
 int main() {
     crow::SimpleApp app;
@@ -15,6 +16,7 @@ int main() {
     });
     registerCourseRoutes(app, db);
     registerTestRoutes(app, db);
+    registerQuestionRoutes(app, db);
 
     app.port(18080).multithreaded().run();
 }
