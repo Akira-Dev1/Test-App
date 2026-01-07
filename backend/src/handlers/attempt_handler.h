@@ -143,9 +143,9 @@ inline void registerAttemptRoutes(crow::SimpleApp& app, DB& db) {
         res["attempt_id"] = attemptId;
         return crow::response(201, res);
     });
-    // Отправка ответа на вопрос
-    CROW_ROUTE(app, "/attempts/<int>/submit-answer").methods("POST"_method)
-    ([&db](const crow::request& req, int attemptId) {        
+    // Отправка ответов внутри попытки
+    CROW_ROUTE(app, "/attempts/<int>/answers").methods("POST"_method)
+    ([&db](const crow::request& req, int attemptId) {
         UserContext ctx;
         auto auth = authGuard(req, ctx);
         if (auth.code != 200) return auth;
@@ -155,25 +155,64 @@ inline void registerAttemptRoutes(crow::SimpleApp& app, DB& db) {
         }
 
         auto body = crow::json::load(req.body);
-        if (!body || !body.has("question_id") || !body.has("answer")) {
-            return crow::response(400, "Missing 'question_id' or 'answer' in body");
-        }
-        
-        int questionId = body["question_id"].i();
-        
-        std::string answer;
-        if (body["answer"].t() == crow::json::type::String) {
-            answer = body["answer"].s();
-        } else if (body["answer"].t() == crow::json::type::Number) {
-            answer = std::to_string(body["answer"].i());
-        } else {
-            return crow::response(400, "Invalid 'answer' format");
+        if (!body || !body.has("question_id") || !body.has("answer_index")) {
+            return crow::response(400, "Missing question_id or answer_index");
         }
 
-        if (db.submitTestAnswer(attemptId, questionId, answer)) {
+        int questionId = body["question_id"].i();
+        int answerIndex = body["answer_index"].i();
+
+        if (db.updateAttemptAnswer(attemptId, questionId, answerIndex)) {
             return crow::response(204);
         } else {
-            return crow::response(400, "Cannot submit answer: Attempt not found or already completed");
+            return crow::response(400, "Cannot change answer: Attempt completed or not found");
+        }
+    });
+    // Отправка ответа на конкретный вопрос
+    CROW_ROUTE(app, "/attempts/<int>/questions/<int>/answer").methods("PATCH"_method)
+    ([&db](const crow::request& req, int attemptId, int questionId) {
+        UserContext ctx;
+        auto auth = authGuard(req, ctx);
+        if (auth.code != 200) return auth;
+
+        bool isOwner = db.isAttemptOwnedBy(attemptId, ctx.userId);
+        PermissionRule updateRule{"answer:update", false, nullptr};
+        bool hasPermission = (checkAccess(ctx, updateRule, 0).code == 200);
+
+        if (!isOwner && !hasPermission) {
+            return crow::response(403, "Forbidden: Access denied");
+        }
+
+        auto body = crow::json::load(req.body);
+        if (!body || !body.has("answer_index")) {
+            return crow::response(400, "Missing answer_index");
+        }
+
+        if (db.updateAttemptAnswer(attemptId, questionId, body["answer_index"].i())) {
+            return crow::response(204);
+        } else {
+            return crow::response(400, "Update failed: Attempt completed or not found");
+        }
+    });
+    // Удалить ответ
+    CROW_ROUTE(app, "/attempts/<int>/questions/<int>/answer").methods("DELETE"_method)
+    ([&db](const crow::request& req, int attemptId, int questionId) {
+        UserContext ctx;
+        auto auth = authGuard(req, ctx);
+        if (auth.code != 200) return auth;
+
+        bool isOwner = db.isAttemptOwnedBy(attemptId, ctx.userId);
+        PermissionRule delRule{"answer:del", false, nullptr};
+        bool hasPermission = (checkAccess(ctx, delRule, 0).code == 200);
+
+        if (!isOwner && !hasPermission) {
+            return crow::response(403, "Forbidden: Access denied");
+        }
+
+        if (db.updateAttemptAnswer(attemptId, questionId, -1)) {
+            return crow::response(204);
+        } else {
+            return crow::response(400, "Delete failed: Attempt completed or not found");
         }
     });
     // Завершение попытки студентом
@@ -207,7 +246,11 @@ inline void registerAttemptRoutes(crow::SimpleApp& app, DB& db) {
         bool isOwner = (ctx.userId == targetUserId);
         bool isAuthor = (ctx.userId == course.author_id);
         
-        PermissionRule readRule{"test:answer:read", false, nullptr};
+        PermissionRule readRule{
+            "test:answer:read", 
+            false, 
+            nullptr
+        };
         bool hasPermission = (checkAccess(ctx, readRule, 0).code == 200);
 
         if (!isOwner && !isAuthor && !hasPermission) {
@@ -222,5 +265,41 @@ inline void registerAttemptRoutes(crow::SimpleApp& app, DB& db) {
 
         return crow::response(200, std::move(attemptData));
     });
+
+    // В src/handlers/attempt_handler.h
+
+CROW_ROUTE(app, "/tests/<int>/attempts/<int>/answers").methods("GET"_method)
+([&db](const crow::request& req, int testId, int targetUserId) {
+    UserContext ctx;
+    auto auth = authGuard(req, ctx);
+    if (auth.code != 200) return auth;
+
+    auto test = db.getTestById(testId);
+    if (test.id == 0) return crow::response(404, "Test not found");
+    auto course = db.getCourseById(test.course_id);
+
+
+    bool isOwner = (ctx.userId == targetUserId);
+    bool isAuthor = (ctx.userId == course.author_id);
+    
+    PermissionRule readRule{
+        "answer:read", 
+        false, 
+        nullptr
+    };
+    bool hasPermission = (checkAccess(ctx, readRule, 0).code == 200);
+
+    if (!isOwner && !isAuthor && !hasPermission) {
+        return crow::response(403, "Forbidden: Access denied to view these answers");
+    }
+
+    auto data = db.getAttemptAnswers(testId, targetUserId);
+    
+    if (data.t() == crow::json::type::Null) {
+        return crow::response(404, "Attempt not found for this user");
+    }
+
+    return crow::response(200, std::move(data));
+});
 
 }

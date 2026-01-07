@@ -5,7 +5,7 @@
 int DB::startTestAttempt(int testId, int userId) {
     ensureConnection();
 
-    const char* checkSql = "SELECT is_active FROM tests WHERE id = $1::int AND is_deleted = false";
+    const char* checkSql = "SELECT is_active, question_ids FROM tests WHERE id = $1::int AND is_deleted = false";
     std::string tId = std::to_string(testId);
     const char* tParams[] = { tId.c_str() };
     PGresult* testRes = PQexecParams((PGconn*)conn, checkSql, 1, nullptr, tParams, nullptr, nullptr, 0);
@@ -20,7 +20,9 @@ int DB::startTestAttempt(int testId, int userId) {
 
     const char* createSql = 
         "INSERT INTO test_attempts (user_id, test_id, questions_snapshot, user_answers, status, score) "
-        "SELECT $1::int, $2::int, to_jsonb(question_ids), '{}'::jsonb, 'in_progress', 0.0 "
+        "SELECT $1::int, $2::int, to_jsonb(question_ids), "
+        "       (SELECT jsonb_object_agg(q_id, -1) FROM unnest(question_ids) AS q_id), "
+        "       'in_progress', 0.0 "
         "FROM tests WHERE id = $2::int "
         "ON CONFLICT (user_id, test_id) DO NOTHING "
         "RETURNING id";
@@ -42,37 +44,63 @@ int DB::startTestAttempt(int testId, int userId) {
 }
 
 // Изменить значение ответа
-bool DB::submitTestAnswer(int attemptId, int questionId, const std::string& answerText) {
+bool DB::updateAttemptAnswer(int attemptId, int questionId, int answerIndex) {
     ensureConnection();
     
-    const char* qCheckSql = "SELECT correct_option FROM questions WHERE id = $1::int LIMIT 1";
+    std::string attIdStr = std::to_string(attemptId);
     std::string qIdStr = std::to_string(questionId);
-    const char* qParams[] = { qIdStr.c_str() };
-    PGresult* qRes = PQexecParams((PGconn*)conn, qCheckSql, 1, nullptr, qParams, nullptr, nullptr, 0);
+
+    const char* existSql = "SELECT 1 FROM questions WHERE id = $1::int LIMIT 1";
+    const char* existParams[] = { qIdStr.c_str() };
+    PGresult* existRes = PQexecParams((PGconn*)conn, existSql, 1, nullptr, existParams, nullptr, nullptr, 0);
     
-    bool isCorrect = false;
-    if (PQresultStatus(qRes) == PGRES_TUPLES_OK && PQntuples(qRes) > 0) {
-        std::string correctOptionIdx = PQgetvalue(qRes, 0, 0);
-        if (answerText == correctOptionIdx) {
-            isCorrect = true;
-        }
+    if (PQresultStatus(existRes) != PGRES_TUPLES_OK || PQntuples(existRes) == 0) {
+        std::cerr << "Validation failed: Question ID " << questionId << " does not exist." << std::endl;
+        PQclear(existRes);
+        return false;
     }
-    PQclear(qRes);
+    PQclear(existRes);
+    
+    const char* checkSql = 
+        "SELECT ta.user_answers->>$2::text, q.correct_option "
+        "FROM test_attempts ta "
+        "JOIN questions q ON q.id = $2::int "
+        "WHERE ta.id = $1::int";
+    
+    const char* params[] = { attIdStr.c_str(), qIdStr.c_str() };
+    PGresult* resCheck = PQexecParams((PGconn*)conn, checkSql, 2, nullptr, params, nullptr, nullptr, 0);
+
+    double scoreDelta = 0.0;
+
+    if (PQresultStatus(resCheck) == PGRES_TUPLES_OK && PQntuples(resCheck) > 0) {
+        std::string oldAnswer = PQgetvalue(resCheck, 0, 0);
+        int correctOption = std::stoi(PQgetvalue(resCheck, 0, 1));
+        
+        bool wasCorrect = (!oldAnswer.empty() && std::stoi(oldAnswer) == correctOption);
+        bool isNowCorrect = (answerIndex == correctOption);
+
+        if (!wasCorrect && isNowCorrect) scoreDelta = 1.0;
+        if (wasCorrect && !isNowCorrect) scoreDelta = -1.0;
+    }
+    PQclear(resCheck);
 
     std::string updateSql = 
         "UPDATE test_attempts "
-        "SET user_answers = user_answers || jsonb_build_object($2::text, $3::text), "
-        "    score = score + " + std::string(isCorrect ? "1.0 " : "0.0 ") +
+        "SET user_answers = user_answers || jsonb_build_object($2::text, $3::int), "
+        "    score = score + $4::float "
         "WHERE id = $1::int AND status = 'in_progress'";
 
-    std::string attIdStr = std::to_string(attemptId);
-    const char* updateParams[] = { attIdStr.c_str(), qIdStr.c_str(), answerText.c_str() };
-    PGresult* res = PQexecParams((PGconn*)conn, updateSql.c_str(), 3, nullptr, updateParams, nullptr, nullptr, 0);
+    std::string deltaStr = std::to_string(scoreDelta);
+    std::string ansIdxStr = std::to_string(answerIndex);
+    const char* updateParams[] = { attIdStr.c_str(), qIdStr.c_str(), ansIdxStr.c_str(), deltaStr.c_str() };
+
+    PGresult* res = PQexecParams((PGconn*)conn, updateSql.c_str(), 4, nullptr, updateParams, nullptr, nullptr, 0);
     
     bool success = (PQresultStatus(res) == PGRES_COMMAND_OK && std::string(PQcmdTuples(res)) == "1");
     PQclear(res);
     return success;
 }
+
 
 
 
@@ -218,6 +246,32 @@ crow::json::wvalue DB::getAttemptData(int testId, int userId) {
     } else {
         result = nullptr;
     }
+    PQclear(res);
+    return result;
+}
+
+// Состояние ответов
+crow::json::wvalue DB::getAttemptAnswers(int testId, int userId) {
+    ensureConnection();
+    
+    std::string tId = std::to_string(testId);
+    std::string uId = std::to_string(userId);
+    const char* params[] = { uId.c_str(), tId.c_str() };
+
+    const char* sql = 
+        "SELECT status, user_answers "
+        "FROM test_attempts WHERE user_id = $1::int AND test_id = $2::int";
+
+    PGresult* res = PQexecParams((PGconn*)conn, sql, 2, nullptr, params, nullptr, nullptr, 0);
+
+    crow::json::wvalue result;
+    if (PQresultStatus(res) == PGRES_TUPLES_OK && PQntuples(res) > 0) {
+        result["status"] = PQgetvalue(res, 0, 0);
+        result["answers"] = crow::json::load(PQgetvalue(res, 0, 1));
+    } else {
+        result = nullptr; 
+    }
+
     PQclear(res);
     return result;
 }

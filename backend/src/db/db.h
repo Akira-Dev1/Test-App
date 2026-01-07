@@ -36,10 +36,12 @@ public:
     std::vector<AttemptDetails> getTestAttemptDetails(int testId, int userIdFilter, bool isAuthor);
 
     int startTestAttempt(int testId, int userId);
-    bool submitTestAnswer(int attemptId, int questionId, const std::string& answerText);
+    bool updateAttemptAnswer(int attemptId, int questionId, int answerIndex);
     bool isAttemptOwnedBy(int attemptId, int userId);
     bool completeAttempt(int attemptId);
     crow::json::wvalue getAttemptData(int testId, int userId);
+
+    crow::json::wvalue getAttemptAnswers(int testId, int userId);
 
     // Курсы
     std::vector<Course> getCourses();
