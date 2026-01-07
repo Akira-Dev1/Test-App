@@ -27,7 +27,6 @@ public:
     int createTest(int courseId, const std::string& title, int authorId);
     bool deleteTest(int testId);
     void setTestActivity(int testId, bool active);
-    bool isUserEnrolled(int courseId, int userId);
 
     bool removeQuestionFromTest(int testId, int questionId);
     bool addQuestionToTest(int testId, int questionId);
@@ -35,6 +34,12 @@ public:
     std::vector<int> getUsersWhoPassedTest(int testId);
     std::vector<UserScore> getTestScores(int testId, int userIdFilter, bool isAuthor);
     std::vector<AttemptDetails> getTestAttemptDetails(int testId, int userIdFilter, bool isAuthor);
+
+    int startTestAttempt(int testId, int userId);
+    bool submitTestAnswer(int attemptId, int questionId, const std::string& answerText);
+    bool isAttemptOwnedBy(int attemptId, int userId);
+    bool completeAttempt(int attemptId);
+    crow::json::wvalue getAttemptData(int testId, int userId);
 
     // Курсы
     std::vector<Course> getCourses();
@@ -45,6 +50,7 @@ public:
     bool addStudentToCourse(int courseId, int userId);
     bool removeStudentFromCourse(int courseId, int userId);
     std::vector<int> getStudentIdsByCourseId(int courseId);
+    bool isUserEnrolled(int courseId, int userId);
 
     // Вопросы
     int createQuestion(int authorId, const std::string& title, const std::string& content, const std::vector<std::string>& options, int correctOption);

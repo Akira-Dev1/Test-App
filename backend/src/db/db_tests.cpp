@@ -137,6 +137,9 @@ bool DB::updateTestStatus(int testId, bool isActive) {
 
     bool success = (PQresultStatus(res) == PGRES_COMMAND_OK && std::string(PQcmdTuples(res)) == "1");
     PQclear(res);
+    if (success && !isActive) {
+        finalizeAllTestAttempts(testId);
+    }
     return success;
 }
 // Завершение всех попыток
@@ -292,110 +295,4 @@ bool DB::reorderQuestionsInTest(int testId, const std::vector<int>& questionIds)
 }
 
 
-// Список пользователей прошедших тест
-std::vector<int> DB::getUsersWhoPassedTest(int testId) {
-    ensureConnection();
-    std::string tId = std::to_string(testId);
-    const char* params[] = { tId.c_str() };
 
-    const char* sql = 
-        "SELECT DISTINCT user_id FROM test_attempts "
-        "WHERE test_id = $1::int AND status = 'completed'";
-
-    PGresult* res = PQexecParams((PGconn*)conn, sql, 1, nullptr, params, nullptr, nullptr, 0);
-    
-    if (PQresultStatus(res) != PGRES_TUPLES_OK) {
-        std::cerr << "Get passed users failed: " << PQerrorMessage((PGconn*)conn) << std::endl;
-        PQclear(res);
-        return {};
-    }
-
-    std::vector<int> userIds;
-    int rows = PQntuples(res);
-    userIds.reserve(rows);
-
-    for (int i = 0; i < rows; i++) {
-        userIds.push_back(std::stoi(PQgetvalue(res, i, 0)));
-    }
-
-    PQclear(res);
-    return userIds;
-}
-
-
-// Получить оценку пользователей (или себя)
-std::vector<UserScore> DB::getTestScores(int testId, int userIdFilter, bool isAuthor) {
-    ensureConnection();
-    std::string tId = std::to_string(testId);
-    
-    std::string sql = "SELECT user_id, score FROM test_attempts WHERE test_id = $1::int AND status = 'completed'";
-    
-    int paramCount = 1;
-    std::vector<const char*> params = { tId.c_str() };
-    std::string uId;
-
-    if (!isAuthor) {
-        sql += " AND user_id = $2::int";
-        uId = std::to_string(userIdFilter);
-        params.push_back(uId.c_str());
-        paramCount = 2;
-    }
-
-    PGresult* res = PQexecParams((PGconn*)conn, sql.c_str(), paramCount, nullptr, params.data(), nullptr, nullptr, 0);
-    std::vector<UserScore> scores;
-
-    if (PQresultStatus(res) == PGRES_TUPLES_OK) {
-        for (int i = 0; i < PQntuples(res); i++) {
-            scores.push_back({
-                std::stoi(PQgetvalue(res, i, 0)),
-                std::stod(PQgetvalue(res, i, 1))
-            });
-        }
-    }
-    PQclear(res);
-    return scores;
-}
-
-// Посмотреть ответы пользователей (пользователя)
-std::vector<AttemptDetails> DB::getTestAttemptDetails(int testId, int userIdFilter, bool isAuthor) {
-    ensureConnection();
-    
-    std::string sql = 
-        "SELECT ta.user_id, q.content, q.options->>(ans.selected_option_idx) as answer_text "
-        "FROM test_attempts ta "
-        "JOIN test_answers ans ON ta.id = ans.attempt_id "
-        "JOIN questions q ON ans.question_id = q.id AND ans.question_version = q.version "
-        "WHERE ta.test_id = $1::int";
-
-    std::vector<const char*> params;
-    std::string tId = std::to_string(testId);
-    params.push_back(tId.c_str());
-    std::string uId;
-
-    if (!isAuthor) {
-        sql += " AND ta.user_id = $2::int";
-        uId = std::to_string(userIdFilter);
-        params.push_back(uId.c_str());
-    }
-
-    sql += " ORDER BY ta.user_id, ta.id";
-
-    PGresult* res = PQexecParams((PGconn*)conn, sql.c_str(), params.size(), nullptr, params.data(), nullptr, nullptr, 0);
-    
-    std::map<int, AttemptDetails> attemptMap;
-    if (PQresultStatus(res) == PGRES_TUPLES_OK) {
-        for (int i = 0; i < PQntuples(res); i++) {
-            int uid = std::stoi(PQgetvalue(res, i, 0));
-            std::string qText = PQgetvalue(res, i, 1);
-            std::string aText = PQgetvalue(res, i, 2);
-
-            attemptMap[uid].user_id = uid;
-            attemptMap[uid].answers.push_back({qText, aText});
-        }
-    }
-    PQclear(res);
-
-    std::vector<AttemptDetails> result;
-    for (auto const& [id, details] : attemptMap) result.push_back(details);
-    return result;
-}

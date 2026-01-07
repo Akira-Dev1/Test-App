@@ -25,6 +25,7 @@ add_executable(core
     src/db/db_tests.cpp
     src/db/db_courses.cpp
     src/db/db_questions.cpp
+    src/db/db_attempts.cpp
     src/security/jwt.cpp
 )
 
