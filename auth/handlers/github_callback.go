@@ -1,20 +1,50 @@
 package handlers
 
 import (
-	"net/http"
 	"log"
+	"net/http"
+
+	"auth/services"
+	"auth/storage"
+	"auth/domain"
 )
 
 func GithubCallback(w http.ResponseWriter, r *http.Request) {
-	code := r.URL.Query().Get("code")
-	if code == "" {
-		http.Error(w, "code not provided", http.StatusBadRequest)
+	state := r.URL.Query().Get("state")
+	code  := r.URL.Query().Get("code")
+	errQ  := r.URL.Query().Get("error")
+
+	if state == "" {
+		http.Error(w, "state not found", http.StatusBadRequest)
 		return
 	}
-	log.Println("GitHub code:", code)
 
-	// дальше:
-	// 1. обмен code → access_token
-	// 2. запрос user info
-	// 3. работа с Mongo
+	if errQ != "" {
+		authState, ok := storage.GetAuthState(state)
+		if ok {
+			authState.Status = domain.StatusDenied
+			storage.SaveAuthState(authState, state)
+		}
+		w.Write([]byte("GitHub authorization denied"))
+		return
+	}
+
+
+	// if code == "" {
+	// 	http.Error(w, "code not found", http.StatusBadRequest)
+	// 	return
+	// }
+
+	log.Println("GitHub code:", code) // НЕ ЗАБЫТЬ УБРАТЬ ЛОГ
+	
+
+	err := services.GithubAuth(code)
+	if err != nil {
+		log.Println("GithubAuth error:", err)
+		http.Error(w, "github auth failed", http.StatusInternalServerError)
+		return
+	}
+
+	w.Write([]byte("GitHub auth success"))
 }
+
