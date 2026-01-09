@@ -220,8 +220,10 @@ bool DB::hasUserAttemptForQuestion(int userId, int questionId) {
 
     const char* sql = 
         "SELECT 1 FROM test_attempts ta "
-        "JOIN test_questions tq ON ta.test_id = tq.test_id "
-        "WHERE ta.user_id = $1::int AND tq.question_id = $2::int LIMIT 1";
+        "JOIN tests t ON ta.test_id = t.id "
+        "WHERE ta.user_id = $1::int "
+        "AND $2::int = ANY(t.question_ids) "
+        "LIMIT 1";
 
     PGresult* res = PQexecParams((PGconn*)conn, sql, 2, nullptr, params, nullptr, nullptr, 0);
     bool exists = (PQntuples(res) > 0);
