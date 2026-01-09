@@ -14,4 +14,7 @@ type AuthState struct {
 	EntryToken string
 	ExpiresAt  time.Time
 	Status     AuthStatus
+	UserID        string // заполняется при success
+	AccessToken   string // JWT access (позже)
+	RefreshToken  string // JWT refresh (позже)
 }

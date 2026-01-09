@@ -66,43 +66,6 @@ func ExchangeCodeForToken(code string) (string, error) {
 	return tokenResp.AccessToken, nil
 }
 
-
-
-
-// func ExchangeCodeForToken(code string) (string, error) {
-// 	body := map[string]string{
-// 		"client_id":     os.Getenv("GITHUB_CLIENT_ID"),
-// 		"client_secret": os.Getenv("GITHUB_CLIENT_SECRET"),
-// 		"code":          code,
-// 	}
-
-// 	jsonBody, _ := json.Marshal(body)
-
-// 	req, _ := http.NewRequest(
-// 		"POST",
-// 		"https://github.com/login/oauth/access_token",
-// 		bytes.NewBuffer(jsonBody),
-// 	)
-
-// 	req.Header.Set("Accept", "application/json")
-// 	req.Header.Set("Content-Type", "application/json")
-
-// 	client := &http.Client{Timeout: 5 * time.Second}
-// 	resp, err := client.Do(req)
-// 	if err != nil {
-// 		return "", err
-// 	}
-// 	defer resp.Body.Close()
-
-// 	var tokenResp githubTokenResponse
-// 	err = json.NewDecoder(resp.Body).Decode(&tokenResp)
-// 	if err != nil {
-// 		return "", err
-// 	}
-
-// 	return tokenResp.AccessToken, nil
-// }
-
 // Bearer-токен означает: любой, у кого есть этот токен, считается авторизованным.
 // То есть: нет подписи, нет шифрования, просто строка
 
