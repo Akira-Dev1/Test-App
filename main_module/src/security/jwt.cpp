@@ -1,11 +1,18 @@
 #include "jwt.h"
 #include <jwt-cpp/jwt.h>
+#include <cstdlib>
 
 // Реализация проверки JWT
 
-static const std::string JWT_SECRET = "super-secret-key"; // Ключ для проверки JWT
-
 UserContext parseAndVerifyJWT(const crow::request& req) {
+    const char* env_secret = std::getenv("JWT_SECRET_KEY");
+
+    if (!env_secret) {
+        throw std::runtime_error("JWT_SECRET_KEY is not defined in environment");
+    }
+    
+    std::string jwt_secret(env_secret);
+
     auto auth = req.get_header_value("Authorization");
     if (auth.rfind("Bearer ", 0) != 0) {
         throw std::runtime_error("No token");
@@ -16,7 +23,7 @@ UserContext parseAndVerifyJWT(const crow::request& req) {
     auto decoded = jwt::decode(token);
 
     jwt::verify()
-        .allow_algorithm(jwt::algorithm::hs256{JWT_SECRET})
+        .allow_algorithm(jwt::algorithm::hs256{jwt_secret})
         .verify(decoded);
     
     UserContext ctx;

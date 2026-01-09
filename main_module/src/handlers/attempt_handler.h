@@ -265,41 +265,39 @@ inline void registerAttemptRoutes(crow::SimpleApp& app, DB& db) {
 
         return crow::response(200, std::move(attemptData));
     });
+    // Просмотр ответов пользователя в конкретном тесте
+    CROW_ROUTE(app, "/tests/<int>/attempts/<int>/answers").methods("GET"_method)
+    ([&db](const crow::request& req, int testId, int targetUserId) {
+        UserContext ctx;
+        auto auth = authGuard(req, ctx);
+        if (auth.code != 200) return auth;
 
-    // В src/handlers/attempt_handler.h
-
-CROW_ROUTE(app, "/tests/<int>/attempts/<int>/answers").methods("GET"_method)
-([&db](const crow::request& req, int testId, int targetUserId) {
-    UserContext ctx;
-    auto auth = authGuard(req, ctx);
-    if (auth.code != 200) return auth;
-
-    auto test = db.getTestById(testId);
-    if (test.id == 0) return crow::response(404, "Test not found");
-    auto course = db.getCourseById(test.course_id);
+        auto test = db.getTestById(testId);
+        if (test.id == 0) return crow::response(404, "Test not found");
+        auto course = db.getCourseById(test.course_id);
 
 
-    bool isOwner = (ctx.userId == targetUserId);
-    bool isAuthor = (ctx.userId == course.author_id);
-    
-    PermissionRule readRule{
-        "answer:read", 
-        false, 
-        nullptr
-    };
-    bool hasPermission = (checkAccess(ctx, readRule, 0).code == 200);
+        bool isOwner = (ctx.userId == targetUserId);
+        bool isAuthor = (ctx.userId == course.author_id);
+        
+        PermissionRule readRule{
+            "answer:read", 
+            false, 
+            nullptr
+        };
+        bool hasPermission = (checkAccess(ctx, readRule, 0).code == 200);
 
-    if (!isOwner && !isAuthor && !hasPermission) {
-        return crow::response(403, "Forbidden: Access denied to view these answers");
-    }
+        if (!isOwner && !isAuthor && !hasPermission) {
+            return crow::response(403, "Forbidden: Access denied to view these answers");
+        }
 
-    auto data = db.getAttemptAnswers(testId, targetUserId);
-    
-    if (data.t() == crow::json::type::Null) {
-        return crow::response(404, "Attempt not found for this user");
-    }
+        auto data = db.getAttemptAnswers(testId, targetUserId);
+        
+        if (data.t() == crow::json::type::Null) {
+            return crow::response(404, "Attempt not found for this user");
+        }
 
-    return crow::response(200, std::move(data));
-});
+        return crow::response(200, std::move(data));
+    });
 
 }

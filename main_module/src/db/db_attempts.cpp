@@ -101,9 +101,6 @@ bool DB::updateAttemptAnswer(int attemptId, int questionId, int answerIndex) {
     return success;
 }
 
-
-
-
 // Список пользователей прошедших тест
 std::vector<int> DB::getUsersWhoPassedTest(int testId) {
     ensureConnection();
@@ -133,7 +130,6 @@ std::vector<int> DB::getUsersWhoPassedTest(int testId) {
     PQclear(res);
     return userIds;
 }
-
 
 // Получить оценку пользователей (или себя)
 std::vector<UserScore> DB::getTestScores(int testId, int userIdFilter, bool isAuthor) {
@@ -186,7 +182,6 @@ std::vector<AttemptDetails> DB::getTestAttemptDetails(int testId, int userIdFilt
             details.user_id = std::stoi(PQgetvalue(res, i, 0));
             
             auto userAnswers = crow::json::load(PQgetvalue(res, i, 1));
-            // Защита от падения, если JSON не является объектом
             if (userAnswers && userAnswers.t() == crow::json::type::Object) {
                 for (auto& key : userAnswers.keys()) {
                     std::string aVal;
@@ -205,7 +200,6 @@ std::vector<AttemptDetails> DB::getTestAttemptDetails(int testId, int userIdFilt
     return result;
 }
 
-
 // Проверка на владение попыткой
 bool DB::isAttemptOwnedBy(int attemptId, int userId) {
     ensureConnection();
@@ -218,6 +212,7 @@ bool DB::isAttemptOwnedBy(int attemptId, int userId) {
     PQclear(res);
     return owned;
 }
+
 // Завершить попытку
 bool DB::completeAttempt(int attemptId) {
     ensureConnection();
@@ -229,6 +224,7 @@ bool DB::completeAttempt(int attemptId) {
     PQclear(res);
     return success;
 }
+
 // Посмотреть попытку
 crow::json::wvalue DB::getAttemptData(int testId, int userId) {
     ensureConnection();

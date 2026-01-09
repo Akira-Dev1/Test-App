@@ -1,6 +1,6 @@
 #include "db.h"
 
-// Получение теста по айди ccc
+// Получение теста по айди
 Test DB::getTestById(int testId) {
     ensureConnection();
     
@@ -30,7 +30,6 @@ Test DB::getTestById(int testId) {
     PQclear(res);
     return t;
 }
-
 
 // Получение тестов по айди курса
 std::vector<Test> DB::getTestsByCourseId(int courseId) {
@@ -66,8 +65,7 @@ std::vector<Test> DB::getTestsByCourseId(int courseId) {
     return tests;
 }
 
-
-// Создание теста (привязанного к курсу) ccc
+// Создание теста (привязанного к курсу)
 int DB::createTest(int courseId, const std::string& title, int authorId) {
     ensureConnection();
 
@@ -98,8 +96,7 @@ int DB::createTest(int courseId, const std::string& title, int authorId) {
     return newId;
 }
 
-
-// Удаление теста ccc
+// Удаление теста
 bool DB::deleteTest(int testId) {
     ensureConnection();
 
@@ -120,7 +117,7 @@ bool DB::deleteTest(int testId) {
     return success;
 }
 
-// Установка активности теста ccc
+// Установка активности теста
 bool DB::updateTestStatus(int testId, bool isActive) {
     ensureConnection();
     std::string tId = std::to_string(testId);
@@ -142,6 +139,7 @@ bool DB::updateTestStatus(int testId, bool isActive) {
     }
     return success;
 }
+
 // Завершение всех попыток
 void DB::finalizeAllTestAttempts(int testId) {
     ensureConnection();
@@ -158,7 +156,7 @@ void DB::finalizeAllTestAttempts(int testId) {
     );
 }
 
-// Проверка записи на курс ccc
+// Проверка записи на курс
 bool DB::isUserEnrolled(int courseId, int userId) {
     ensureConnection();
 
@@ -213,7 +211,6 @@ bool DB::removeQuestionFromTest(int testId, int questionId) {
     return success;
 }
 
-
 // Добавление вопроса в тест
 bool DB::addQuestionToTest(int testId, int questionId) {
     ensureConnection();
@@ -251,7 +248,6 @@ bool DB::addQuestionToTest(int testId, int questionId) {
     PQclear(res);
     return success;
 }
-
 
 // Изменение порядка вопросов в тесте
 bool DB::reorderQuestionsInTest(int testId, const std::vector<int>& questionIds) {

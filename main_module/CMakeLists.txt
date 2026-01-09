@@ -22,10 +22,11 @@ link_directories(${LIBPQ_LIBRARY_DIRS})
 add_executable(core
     src/main.cpp
     src/db/db_base.cpp
-    src/db/db_tests.cpp
     src/db/db_courses.cpp
+    src/db/db_tests.cpp
     src/db/db_questions.cpp
     src/db/db_attempts.cpp
+    src/db/db_user.cpp
     src/security/jwt.cpp
 )
 

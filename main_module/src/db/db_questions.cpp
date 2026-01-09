@@ -1,6 +1,5 @@
 #include "db.h"
 
-
 // Создание вопроса
 int DB::createQuestion(int authorId, const std::string& title, const std::string& content, 
                        const std::vector<std::string>& options, int correctOption) {
@@ -31,6 +30,7 @@ int DB::createQuestion(int authorId, const std::string& title, const std::string
     PQclear(res);
     return newId;
 }
+
 // Удаление вопроса
 bool DB::deleteQuestion(int questionId) {
     ensureConnection();
@@ -51,6 +51,7 @@ bool DB::deleteQuestion(int questionId) {
     PQclear(res);
     return success;
 }
+
 // Изменить вопрос
 int DB::updateQuestion(int questionId, int userId, const std::string& title, 
                        const std::string& content, const std::vector<std::string>& options, 
@@ -99,6 +100,7 @@ int DB::updateQuestion(int questionId, int userId, const std::string& title,
 
     return createdVersion;
 }
+
 // Получить детали вопроса
 Question DB::getQuestionByIdAndVersion(int questionId, int version) {
     ensureConnection();
@@ -132,7 +134,7 @@ Question DB::getQuestionByIdAndVersion(int questionId, int version) {
     return q;
 }
 
-
+// Получить список вопросов
 std::vector<Question> DB::getQuestionsList(int userId, bool canSeeAll) {
     ensureConnection();
     
@@ -164,8 +166,7 @@ std::vector<Question> DB::getQuestionsList(int userId, bool canSeeAll) {
     return list;
 }
 
-
-
+// Получить вопрос по айди
 Question DB::getQuestionById(int questionId) {
     ensureConnection();
     
@@ -209,6 +210,8 @@ Question DB::getQuestionById(int questionId) {
     PQclear(res);
     return q;
 }
+
+// Была ли попытка пройти тест с конекретный вопросом
 bool DB::hasUserAttemptForQuestion(int userId, int questionId) {
     ensureConnection();
     std::string uId = std::to_string(userId);

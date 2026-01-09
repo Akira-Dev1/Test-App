@@ -40,7 +40,7 @@ CREATE TABLE IF NOT EXISTS tests (
 );
 
 
--- 5. ПОПЫТКИ И ОТВЕТЫ
+-- Попытки и ответы
 CREATE TABLE IF NOT EXISTS test_attempts (
     id                      SERIAL PRIMARY KEY,
     user_id                 INTEGER NOT NULL,

@@ -1,16 +1,17 @@
 #include "db.h"
 
-
 // Конструктор
 DB::DB(const std::string& conninfo) : conninfo(conninfo), conn(nullptr) {
     ensureConnection();
 }
+
 // Деструктор
 DB::~DB() {
     if (conn) {
         PQfinish((PGconn*)conn);
     }
 }
+
 // Проверка подключения к базе данных
 void DB::ensureConnection() {
     if (!conn || PQstatus((PGconn*)conn) != CONNECTION_OK) {

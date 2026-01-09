@@ -1,7 +1,5 @@
 #include "db.h"
 
-
-
 // Получение всех курсов
 std::vector<Course> DB::getCourses() {
     ensureConnection();
@@ -25,8 +23,7 @@ std::vector<Course> DB::getCourses() {
     return courses;
 }
 
-
-// Получение курса по айди из бд
+// Получение курса по айди
 Course DB::getCourseById(int courseId) {
     ensureConnection();
     std::string idStr = std::to_string(courseId);
@@ -54,8 +51,7 @@ Course DB::getCourseById(int courseId) {
     return c;  
 }
 
-
-// Создание курса в бд
+// Создание курса
 int DB::createCourse(const std::string& title, const std::string& description, int authorId) {
     ensureConnection();
     std::string tIdStr = std::to_string(authorId);
@@ -82,7 +78,6 @@ int DB::createCourse(const std::string& title, const std::string& description, i
     return newId;
 }
 
-
 // Удаление курса (мягкое удаление)
 void DB::deleteCourse(int courseId) {
     ensureConnection();
@@ -101,7 +96,6 @@ void DB::deleteCourse(int courseId) {
 
     PQclear(res);
 }
-
 
 // Изменение информации о курсе
 bool DB::updateCourse(int courseId, std::string title, std::string description) {
@@ -129,17 +123,6 @@ bool DB::updateCourse(int courseId, std::string title, std::string description) 
     PQclear(res);
     return success;
 }
-
-
-
-
-
-
-
-
-
-
-
 
 // Добавление студента на курс
 bool DB::addStudentToCourse(int courseId, int userId) {
@@ -176,6 +159,7 @@ bool DB::addStudentToCourse(int courseId, int userId) {
     PQclear(res);
     return success;
 }
+
 // Удаление студента с курса
 bool DB::removeStudentFromCourse(int courseId, int userId) {
     ensureConnection();
@@ -209,6 +193,7 @@ bool DB::removeStudentFromCourse(int courseId, int userId) {
     PQclear(res);
     return wasRemoved;
 }
+
 // Список всех студентов курса
 std::vector<int> DB::getStudentIdsByCourseId(int courseId) {
     ensureConnection();

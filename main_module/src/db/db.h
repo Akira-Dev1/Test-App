@@ -9,9 +9,17 @@
 #include "../domain/course.h"
 #include "../domain/question.h"
 
+// Структура оценки пользователя
 struct UserScore {
     int user_id;
     double score;
+};
+
+// Структура информации о пользователе
+struct UserProfileData {
+    std::vector<Course> courses;
+    std::vector<Test> tests;
+    std::vector<UserScore> grades;
 };
 
 class DB {
@@ -35,12 +43,12 @@ public:
     std::vector<UserScore> getTestScores(int testId, int userIdFilter, bool isAuthor);
     std::vector<AttemptDetails> getTestAttemptDetails(int testId, int userIdFilter, bool isAuthor);
 
+    // Попытки
     int startTestAttempt(int testId, int userId);
     bool updateAttemptAnswer(int attemptId, int questionId, int answerIndex);
     bool isAttemptOwnedBy(int attemptId, int userId);
     bool completeAttempt(int attemptId);
     crow::json::wvalue getAttemptData(int testId, int userId);
-
     crow::json::wvalue getAttemptAnswers(int testId, int userId);
 
     // Курсы
@@ -63,7 +71,8 @@ public:
     Question getQuestionByIdAndVersion(int questionId, int version);
     bool hasUserAttemptForQuestion(int userId, int questionId);
 
-    // Ответы
+    // Пользователь
+    crow::json::wvalue getUserDataProfile(int userId, bool includeCourses, bool includeTests, bool includeGrades);
 
 private:
     void ensureConnection();

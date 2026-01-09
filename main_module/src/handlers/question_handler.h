@@ -142,7 +142,6 @@ inline void registerQuestionRoutes(crow::SimpleApp& app, DB& db) {
 
         return crow::response(403, "Access denied");
     });
-
     // Посмотреть список вопросов (своих)
     CROW_ROUTE(app, "/questions").methods("GET"_method)
     ([&db](const crow::request& req) {
@@ -172,8 +171,4 @@ inline void registerQuestionRoutes(crow::SimpleApp& app, DB& db) {
         res["questions"] = std::move(questions_json);
         return crow::response(200, res);
     });
-
-
-
-
 }
