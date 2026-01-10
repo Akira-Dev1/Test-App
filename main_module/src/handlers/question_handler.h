@@ -79,32 +79,51 @@ inline void registerQuestionRoutes(crow::SimpleApp& app, DB& db) {
         auto auth = authGuard(req, ctx);
         if (auth.code != 200) return auth;
 
+        Question q = db.getQuestionById(questionId); 
+        if (q.id == 0) return crow::response(404, "Question not found");
+
         PermissionRule rule{
             "quest:update", 
             false, 
             nullptr
         };
-
-        Question q = db.getQuestionById(questionId); 
-        if (q.id == 0) return crow::response(404, "Question not found");
-
         if (checkAccess(ctx, rule, 0).code != 200 && q.author_id != ctx.userId) {
             return crow::response(403, "Forbidden: Missing quest:update permission");
         }
 
         auto body = crow::json::load(req.body);
-        if (!body || !body.has("title") || !body.has("content") || 
-            !body.has("options") || !body.has("correct_option")) {
-            return crow::response(400, "Missing fields");
+        if (!body) return crow::response(400, "Invalid JSON");
+
+
+        if (req.method == "PUT"_method) {
+            if (!body.has("title") || !body.has("content") || !body.has("options") || !body.has("correct_option")) {
+                return crow::response(400, "PUT request requires all fields");
+            }
         }
 
-        std::vector<std::string> options;
-        for (auto& opt : body["options"]) options.push_back(opt.s());
+        std::string newTitle = body.has("title") ? body["title"].s() : q.title;
+        std::string newContent = body.has("content") ? body["content"].s() : q.content;
+        int newCorrectOption = body.has("correct_option") ? body["correct_option"].i() : q.correct_option;
+
+        std::vector<std::string> newOptions;
+        if (body.has("options")) {
+            if (body["options"].t() != crow::json::type::List) return crow::response(400, "Options must be an array");
+            for (auto& opt : body["options"]) newOptions.push_back(opt.s());
+        } else {
+            newOptions = q.options;
+        }
+
+        if (newOptions.empty()) {
+            return crow::response(400, "Question must have options");
+        }
 
         int result = db.updateQuestion(
-            questionId, ctx.userId,
-            body["title"].s(), body["content"].s(),
-            options, body["correct_option"].i()
+            questionId, 
+            ctx.userId,
+            newTitle, 
+            newContent,
+            newOptions, 
+            newCorrectOption
         );
 
         if (result == -1) return crow::response(404, "Question not found");
