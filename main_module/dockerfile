@@ -28,10 +28,10 @@ ENV PATH="/opt/vcpkg:$PATH"
 
 
 WORKDIR /app
-COPY . /app
+COPY vcpkg.json .
 
 # Установка библеотек через vcpkg
-WORKDIR /appRUN /opt/vcpkg/vcpkg install --triplet x64-linux
+RUN vcpkg install
 COPY . .
 
 # Сборка модуля

@@ -12,6 +12,7 @@ endif()
 
 find_package(Crow CONFIG REQUIRED)
 find_package(OpenSSL REQUIRED)
+find_package(cpr REQUIRED)
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(PQXX REQUIRED libpqxx)
 pkg_check_modules(LIBPQ REQUIRED libpq)
@@ -36,4 +37,5 @@ target_link_libraries(core
     OpenSSL::SSL
     OpenSSL::Crypto
     Crow::Crow 
+    cpr::cpr   
 )

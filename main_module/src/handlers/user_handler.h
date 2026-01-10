@@ -38,4 +38,260 @@ inline void registerUserRoutes(crow::SimpleApp& app, DB& db) {
 
         return crow::response(200, std::move(data));
     });
+    // Посмотреть список пользователей
+    CROW_ROUTE(app, "/users").methods("GET"_method)
+    ([&db](const crow::request& req) {
+        UserContext ctx;
+        auto auth = authGuard(req, ctx);
+        if (auth.code != 200) return auth;
+
+        PermissionRule readRule{
+            "user:list:read", 
+            false, 
+            nullptr
+        };
+
+        if (checkAccess(ctx, readRule, 0).code != 200) {
+            return crow::response(403, "Forbidden");
+        }
+
+        crow::json::wvalue cmd;
+        cmd["action"] = "get_user_list";
+        cmd["payload"] = crow::json::wvalue::object();
+
+        cpr::Response r = cpr::Get(
+            cpr::Url{"http://auth-service:18081/internal/users-data"},
+            cpr::Body{cmd.dump()},
+            cpr::Header{{"Content-Type", "application/json"}},
+            cpr::Timeout{3000}
+        );
+
+        if (r.status_code == 200) {
+            return crow::response(200, r.text);
+        } else {
+            return crow::response(500, "Error from auth-service");
+        }
+    });
+    // Посмотреть информацию о пользователе (ФИО)
+    CROW_ROUTE(app, "/users/<int>").methods("GET"_method)
+    ([&db](const crow::request& req, int targetUserId) {
+        UserContext ctx;
+        auto auth = authGuard(req, ctx);
+        if (auth.code != 200) return auth;
+
+        crow::json::wvalue cmd;
+        cmd["action"] = "get_user_info";
+        cmd["payload"]["userId"] = targetUserId;
+
+        cpr::Response r = cpr::Post(
+            cpr::Url{"http://auth-service:8081/internal/users-data"},
+            cpr::Body{cmd.dump()},
+            cpr::Header{{"Content-Type", "application/json"}},
+            cpr::Timeout{3000}
+        );
+
+        if (r.status_code == 200) {
+            return crow::response(200, r.text);
+        } else {
+            return crow::response(500, "Error from auth-service");
+        }
+    });
+    // Изменить ФИО пользователя
+    CROW_ROUTE(app, "/users/<int>/name").methods("PUT"_method)
+    ([&db](const crow::request& req, int targetUserId) {
+        UserContext ctx;
+        auto auth = authGuard(req, ctx);
+        if (auth.code != 200) return auth;
+
+        bool isSelf = (ctx.userId == targetUserId);
+
+        PermissionRule readRule{
+            "user:fullName:write", 
+            false, 
+            nullptr
+        };
+
+        bool hasAdminRule = (checkAccess(ctx, readRule, 0).code == 200);
+
+        if (!isSelf && !hasAdminRule) {
+            return crow::response(403, "Forbidden: You can only change your own name");
+        }
+
+        auto data = crow::json::load(req.body);
+        if (!data || !data.has("full_name")) {
+            return crow::response(400, "Invalid JSON: expected { 'full_name': '...' }");
+        }
+        std::string newName = data["full_name"].s();
+
+        crow::json::wvalue cmd;
+        cmd["action"] = "update_full_name";
+        cmd["payload"]["userId"] = targetUserId;
+        cmd["payload"]["newName"] = newName;
+
+        cpr::Response r = cpr::Post(
+            cpr::Url{"http://auth-service:8081/internal/users-data"},
+            cpr::Body{cmd.dump()},
+            cpr::Header{{"Content-Type", "application/json"}},
+            cpr::Timeout{3000}
+        );
+
+        if (r.status_code == 200) {
+            return crow::response(200, "Full name updated successfully");
+        } else {
+            return crow::response(500, "Error from auth-service");
+        }
+    });
+    // Посмотреть роли пользователя
+    CROW_ROUTE(app, "/users/<int>/roles").methods("GET"_method)
+    ([&db](const crow::request& req, int targetUserId) {
+        UserContext ctx;
+        auto auth = authGuard(req, ctx);
+        if (auth.code != 200) return auth;
+
+        PermissionRule readRule{
+            "user:roles:read", 
+            false, 
+            nullptr
+        };
+
+        if (checkAccess(ctx, readRule, 0).code != 200) {
+            return crow::response(403, "Forbidden");
+        }
+
+        crow::json::wvalue cmd;
+        cmd["action"] = "get_user_roles";
+        cmd["payload"]["userId"] = targetUserId;
+
+        cpr::Response r = cpr::Post(
+            cpr::Url{"http://auth-service:8081/internal/users-data"},
+            cpr::Body{cmd.dump()},
+            cpr::Header{{"Content-Type", "application/json"}},
+            cpr::Timeout{3000}
+        );
+
+        if (r.status_code == 200) {
+            return crow::response(200, r.text);
+        } else {
+            return crow::response(500, "Error from auth-service");
+        }
+    });
+    // Изменить роли пользователю
+    CROW_ROUTE(app, "/users/<int>/roles").methods("PUT"_method)
+    ([&db](const crow::request& req, int targetUserId) {
+        UserContext ctx;
+        auto auth = authGuard(req, ctx);
+        if (auth.code != 200) return auth;
+
+        PermissionRule readRule{
+            "user:roles:write", 
+            false, 
+            nullptr
+        };
+
+        if (checkAccess(ctx, readRule, 0).code != 200) {
+            return crow::response(403, "Forbidden");
+        }
+
+        auto data = crow::json::load(req.body);
+        if (!data || !data.has("roles") || data["roles"].t() != crow::json::type::List) {
+            return crow::response(400, "Invalid JSON: expected { 'roles': ['role1', 'role2'] }");
+        }
+
+        crow::json::wvalue cmd;
+        cmd["action"] = "update_user_roles";
+        cmd["payload"]["userId"] = targetUserId;
+        cmd["payload"]["roles"] = data["roles"];
+
+        cpr::Response r = cpr::Post(
+            cpr::Url{"http://auth-service:8081/internal/users-data"},
+            cpr::Body{cmd.dump()},
+            cpr::Header{{"Content-Type", "application/json"}},
+            cpr::Timeout{3000}
+        );
+
+        if (r.status_code == 200) {
+            return crow::response(200, "Roles updated successfully");
+        } else {
+            return crow::response(500, "Error from auth-service");
+        }
+    });
+    // Посмотреть заблокирован ли пользователь
+    CROW_ROUTE(app, "/users/<int>/block-status").methods("GET"_method)
+    ([&db](const crow::request& req, int targetUserId) {
+        UserContext ctx;
+        auto auth = authGuard(req, ctx);
+        if (auth.code != 200) return auth;
+
+        PermissionRule readRule{
+            "user:block:read", 
+            false, 
+            nullptr
+        };
+
+        if (checkAccess(ctx, readRule, 0).code != 200) {
+            return crow::response(403, "Forbidden");
+        }
+
+        crow::json::wvalue cmd;
+        cmd["action"] = "get_user_block_status";
+        cmd["payload"]["userId"] = targetUserId;
+
+        cpr::Response r = cpr::Post(
+            cpr::Url{"http://auth-service:8081/internal/users-data"},
+            cpr::Body{cmd.dump()},
+            cpr::Header{{"Content-Type", "application/json"}},
+            cpr::Timeout{3000}
+        );
+
+        if (r.status_code == 200) {
+            return crow::response(200, r.text);
+        } else {
+            return crow::response(500, "Error from auth-service");
+        }
+    });
+    // Заблокировать/Разблокировать пользователя
+    CROW_ROUTE(app, "/users/<int>/block").methods("POST"_method)
+    ([&db](const crow::request& req, int targetUserId) {
+        UserContext ctx;
+        auto auth = authGuard(req, ctx);
+        if (auth.code != 200) return auth;
+
+        if (ctx.userId == targetUserId) {
+            return crow::response(403, "Forbidden: You cannot block/unblock yourself");
+        }
+
+        PermissionRule readRule{
+            "user:block:write", 
+            false, 
+            nullptr
+        };
+
+        if (checkAccess(ctx, readRule, 0).code != 200) {
+            return crow::response(403, "Forbidden");
+        }
+
+        auto data = crow::json::load(req.body);
+        if (!data || !data.has("is_blocked")) {
+            return crow::response(400, "Invalid JSON: expected { 'is_blocked': bool }");
+        }
+        bool shouldBlock = data["is_blocked"].b();
+
+        crow::json::wvalue cmd;
+        cmd["action"] = "set_block_status";
+        cmd["payload"]["userId"] = targetUserId;
+        cmd["payload"]["is_blocked"] = shouldBlock;
+
+        cpr::Response r = cpr::Post(
+            cpr::Url{"http://auth-service:8081/internal/users-data"},
+            cpr::Body{cmd.dump()},
+            cpr::Header{{"Content-Type", "application/json"}},
+            cpr::Timeout{3000}
+        );
+
+        if (r.status_code == 200) {
+            return crow::response(200, shouldBlock ? "User blocked" : "User unblocked");
+        } else {
+            return crow::response(500, "Error from auth-service");
+        }
+    });
 }

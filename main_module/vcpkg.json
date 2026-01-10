@@ -6,6 +6,7 @@
     "boost-asio",
     "openssl",
     "jwt-cpp",
+    "cpr",
     "picojson" 
   ]
 }
