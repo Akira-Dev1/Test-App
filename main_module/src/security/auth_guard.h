@@ -4,7 +4,7 @@
 
 // Проверка JWT
 
-inline crow::response authGuard(
+inline int authGuard(
     const crow::request& req,
     UserContext& ctx
 ) {
@@ -12,11 +12,11 @@ inline crow::response authGuard(
         ctx = parseAndVerifyJWT(req);
 
         if (ctx.blocked) {
-            return crow::response(418);
+            return 418;
         }
 
-        return crow::response(200);
+        return 200;
     } catch (...) {
-        return crow::response(401);
+        return 401;
     }
 }

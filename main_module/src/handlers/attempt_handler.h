@@ -12,7 +12,8 @@ inline void registerAttemptRoutes(crow::SimpleApp& app, DB& db) {
     ([&db](const crow::request& req, int testId) {
         UserContext ctx;
         auto auth = authGuard(req, ctx);
-        if (auth.code != 200) return auth;
+        if (auth == 418) return crow::response(403, "Blocked");
+        if (auth == 401) return crow::response(401, "Unauthorized");
 
         auto test = db.getTestById(testId);
         if (test.id == 0) return crow::response(404, "Test not found");
@@ -41,7 +42,8 @@ inline void registerAttemptRoutes(crow::SimpleApp& app, DB& db) {
     ([&db](const crow::request& req, int testId) {
         UserContext ctx;
         auto auth = authGuard(req, ctx);
-        if (auth.code != 200) return auth;
+        if (auth == 418) return crow::response(403, "Blocked");
+        if (auth == 401) return crow::response(401, "Unauthorized");
 
         auto test = db.getTestById(testId);
         if (test.id == 0) return crow::response(404, "Test not found");
@@ -79,7 +81,8 @@ inline void registerAttemptRoutes(crow::SimpleApp& app, DB& db) {
     ([&db](const crow::request& req, int testId) {
         UserContext ctx;
         auto auth = authGuard(req, ctx);
-        if (auth.code != 200) return auth;
+        if (auth == 418) return crow::response(403, "Blocked");
+        if (auth == 401) return crow::response(401, "Unauthorized");
 
         auto test = db.getTestById(testId);
         if (test.id == 0) return crow::response(404, "Test not found");
@@ -124,7 +127,8 @@ inline void registerAttemptRoutes(crow::SimpleApp& app, DB& db) {
     ([&db](const crow::request& req, int testId) {
         UserContext ctx;
         auto auth = authGuard(req, ctx);
-        if (auth.code != 200) return auth;
+        if (auth == 418) return crow::response(403, "Blocked");
+        if (auth == 401) return crow::response(401, "Unauthorized");
 
         auto test = db.getTestById(testId);
         if (test.id == 0) return crow::response(404, "Test not found");
@@ -148,7 +152,8 @@ inline void registerAttemptRoutes(crow::SimpleApp& app, DB& db) {
     ([&db](const crow::request& req, int attemptId) {
         UserContext ctx;
         auto auth = authGuard(req, ctx);
-        if (auth.code != 200) return auth;
+        if (auth == 418) return crow::response(403, "Blocked");
+        if (auth == 401) return crow::response(401, "Unauthorized");
 
         if (!db.isAttemptOwnedBy(attemptId, ctx.userId)) {
             return crow::response(403, "Forbidden: You do not own this attempt");
@@ -173,7 +178,8 @@ inline void registerAttemptRoutes(crow::SimpleApp& app, DB& db) {
     ([&db](const crow::request& req, int attemptId, int questionId) {
         UserContext ctx;
         auto auth = authGuard(req, ctx);
-        if (auth.code != 200) return auth;
+        if (auth == 418) return crow::response(403, "Blocked");
+        if (auth == 401) return crow::response(401, "Unauthorized");
 
         bool isOwner = db.isAttemptOwnedBy(attemptId, ctx.userId);
         PermissionRule updateRule{"answer:update", false, nullptr};
@@ -199,7 +205,8 @@ inline void registerAttemptRoutes(crow::SimpleApp& app, DB& db) {
     ([&db](const crow::request& req, int attemptId, int questionId) {
         UserContext ctx;
         auto auth = authGuard(req, ctx);
-        if (auth.code != 200) return auth;
+        if (auth == 418) return crow::response(403, "Blocked");
+        if (auth == 401) return crow::response(401, "Unauthorized");
 
         bool isOwner = db.isAttemptOwnedBy(attemptId, ctx.userId);
         PermissionRule delRule{"answer:del", false, nullptr};
@@ -220,7 +227,8 @@ inline void registerAttemptRoutes(crow::SimpleApp& app, DB& db) {
     ([&db](const crow::request& req, int attemptId) {
         UserContext ctx;
         auto auth = authGuard(req, ctx);
-        if (auth.code != 200) return auth;
+        if (auth == 418) return crow::response(403, "Blocked");
+        if (auth == 401) return crow::response(401, "Unauthorized");
 
         if (!db.isAttemptOwnedBy(attemptId, ctx.userId)) {
             return crow::response(403, "Forbidden: You do not own this attempt");
@@ -237,7 +245,8 @@ inline void registerAttemptRoutes(crow::SimpleApp& app, DB& db) {
     ([&db](const crow::request& req, int testId, int targetUserId) {
         UserContext ctx;
         auto auth = authGuard(req, ctx);
-        if (auth.code != 200) return auth;
+        if (auth == 418) return crow::response(403, "Blocked");
+        if (auth == 401) return crow::response(401, "Unauthorized");
 
         auto test = db.getTestById(testId);
         if (test.id == 0) return crow::response(404, "Test not found");
@@ -270,7 +279,8 @@ inline void registerAttemptRoutes(crow::SimpleApp& app, DB& db) {
     ([&db](const crow::request& req, int testId, int targetUserId) {
         UserContext ctx;
         auto auth = authGuard(req, ctx);
-        if (auth.code != 200) return auth;
+        if (auth == 418) return crow::response(403, "Blocked");
+        if (auth == 401) return crow::response(401, "Unauthorized");
 
         auto test = db.getTestById(testId);
         if (test.id == 0) return crow::response(404, "Test not found");

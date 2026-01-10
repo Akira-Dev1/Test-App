@@ -11,7 +11,8 @@ inline void registerQuestionRoutes(crow::SimpleApp& app, DB& db) {
     ([&db](const crow::request& req) {
         UserContext ctx;
         auto auth = authGuard(req, ctx);
-        if (auth.code != 200) return auth;
+        if (auth == 418) return crow::response(403, "Blocked");
+        if (auth == 401) return crow::response(401, "Unauthorized");
 
         PermissionRule rule{
             "quest:create", 
@@ -50,7 +51,8 @@ inline void registerQuestionRoutes(crow::SimpleApp& app, DB& db) {
     ([&db](const crow::request& req, int questionId) {
         UserContext ctx;
         auto auth = authGuard(req, ctx);
-        if (auth.code != 200) return auth;
+        if (auth == 418) return crow::response(403, "Blocked");
+        if (auth == 401) return crow::response(401, "Unauthorized");
 
         auto question = db.getQuestionById(questionId);
         if (question.id == 0) return crow::response(404, "Question not found");
@@ -77,7 +79,8 @@ inline void registerQuestionRoutes(crow::SimpleApp& app, DB& db) {
     ([&db](const crow::request& req, int questionId) {
         UserContext ctx;
         auto auth = authGuard(req, ctx);
-        if (auth.code != 200) return auth;
+        if (auth == 418) return crow::response(403, "Blocked");
+        if (auth == 401) return crow::response(401, "Unauthorized");
 
         Question q = db.getQuestionById(questionId); 
         if (q.id == 0) return crow::response(404, "Question not found");
@@ -139,7 +142,8 @@ inline void registerQuestionRoutes(crow::SimpleApp& app, DB& db) {
     ([&db](const crow::request& req, int questionId, int version) {
         UserContext ctx;
         auto auth = authGuard(req, ctx);
-        if (auth.code != 200) return auth;
+        if (auth == 418) return crow::response(403, "Blocked");
+        if (auth == 401) return crow::response(401, "Unauthorized");
 
         PermissionRule rule{
             "quest:read", 
@@ -166,7 +170,8 @@ inline void registerQuestionRoutes(crow::SimpleApp& app, DB& db) {
     ([&db](const crow::request& req) {
         UserContext ctx;
         auto auth = authGuard(req, ctx);
-        if (auth.code != 200) return auth;
+        if (auth == 418) return crow::response(403, "Blocked");
+        if (auth == 401) return crow::response(401, "Unauthorized");
 
         PermissionRule rule{
             "quest:list:read", 
