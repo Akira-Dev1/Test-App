@@ -19,23 +19,30 @@ UserContext parseAndVerifyJWT(const crow::request& req) {
     }
 
     std::string token = auth.substr(7);
+    try {
+        auto decoded = jwt::decode(token);
 
-    auto decoded = jwt::decode(token);
+        jwt::verify()
+            .allow_algorithm(jwt::algorithm::hs256{jwt_secret})
+            .with_leeway(10)
+            .verify(decoded);
+        
+        UserContext ctx;
 
-    jwt::verify()
-        .allow_algorithm(jwt::algorithm::hs256{jwt_secret})
-        .verify(decoded);
-    
-    UserContext ctx;
-    ctx.userId = decoded.get_payload_claim("user_id").as_integer();
-    ctx.blocked = decoded.get_payload_claim("blocked").as_boolean();
+        ctx.userId = decoded.get_payload_claim("user_id").as_string();
+        ctx.blocked = decoded.get_payload_claim("blocked").as_boolean();
 
-    for (auto& p : decoded.get_payload_claim("permissions").as_array()) {
-        ctx.permissions.insert(p.get<std::string>());
+        for (auto& p : decoded.get_payload_claim("permissions").as_array()) {
+            ctx.permissions.insert(p.get<std::string>());
+        }
+        for (auto& r : decoded.get_payload_claim("roles").as_array()) {
+            ctx.roles.insert(r.get<std::string>());
+        }
+
+        return ctx;
+    } catch (const jwt::token_verification_exception& e) {
+        throw std::runtime_error("Token expired or invalid: " + std::string(e.what()));
+    } catch (const std::exception& e) {
+        throw std::runtime_error("Auth error: " + std::string(e.what()));
     }
-    for (auto& r : decoded.get_payload_claim("roles").as_array()) {
-        ctx.roles.insert(r.get<std::string>());
-    }
-
-    return ctx;
 }
