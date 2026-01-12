@@ -1,13 +1,14 @@
 package services
 
 import (
-	"errors"
-	"strconv"
-	"time"
-    "log"
 	"auth/clients"
 	"auth/domain"
+	"auth/permissions"
 	"auth/storage"
+	"errors"
+	"log"
+	"strconv"
+	"time"
 
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -61,6 +62,7 @@ func GithubAuth(code string) (*domain.User, error) {
 		GithubID:      &githubID,
 		// Roles:         []domain.Role{domain.RoleStudent},
         Roles:         []string{string(domain.RoleStudent)},
+        Permissions: permissions.ResolvePermissions([]string{string(domain.RoleStudent)}),
 		RefreshTokens: []string{},
 		CreatedAt:     time.Now(),
     })

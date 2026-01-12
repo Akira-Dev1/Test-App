@@ -6,7 +6,6 @@ import (
 	"auth/services"
 	"auth/storage"
 	"auth/domain"
-	"auth/permissions"
 	"auth/jwt"
 )
 
@@ -39,12 +38,9 @@ func GithubCallback(w http.ResponseWriter, r *http.Request) {
         return
     }
 
-    roles := user.Roles
-    perms := permissions.ResolvePermissions(roles)
-
     accessToken, err := jwt.GenerateAccessToken(
         user.ID.Hex(),
-        perms,
+        user.Permissions,
     )
     if err != nil {
         http.Error(w, "access token error", http.StatusInternalServerError)
@@ -73,45 +69,4 @@ func GithubCallback(w http.ResponseWriter, r *http.Request) {
 
     w.Write([]byte("GitHub auth success"))
 }
-
-
-
-
-
-
-// func GithubCallback(w http.ResponseWriter, r *http.Request) {
-// 	state := r.URL.Query().Get("state")
-// 	code  := r.URL.Query().Get("code")
-// 	errQ  := r.URL.Query().Get("error")
-
-// 	if state == "" {
-// 		http.Error(w, "state not found", http.StatusBadRequest)
-// 		return
-// 	}
-
-// 	if errQ != "" {
-// 		authState, ok := storage.GetAuthState(state)
-// 		if ok {
-// 			authState.Status = domain.StatusDenied
-// 			storage.SaveAuthState(authState, state)
-// 		}
-// 		w.Write([]byte("GitHub authorization denied"))
-// 		return
-// 	}	
-
-// 	user, err := services.GithubAuth(code)
-// 	if err != nil {
-// 		http.Error(w, "github auth failed", http.StatusUnauthorized)
-// 		return
-// 	}
-
-// 	authState, ok := storage.GetAuthState(state)
-// 	if ok {
-// 		authState.Status = domain.StatusApproved
-// 		authState.UserID = user.ID.String()
-// 		storage.SaveAuthState(authState, state)
-// 	}
-
-// 	w.Write([]byte("GitHub auth success"))
-// }
 
