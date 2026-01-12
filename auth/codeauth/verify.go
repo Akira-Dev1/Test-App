@@ -7,30 +7,24 @@ import (
 	"auth/storage"
 )
 
-func VerifyCode(entryToken, code string) (domain.AuthStatus, error) {
+func VerifyCode(code string) (domain.AuthStatus, error) {
 	codeState, ok := storage.GetCode(code)
 	if !ok {
-		deny(entryToken)
 		return domain.StatusDenied, ErrCodeNotFound
 	}
 
 	if time.Now().After(codeState.ExpiresAt) {
-		deny(entryToken)
+		deny(codeState.EntryToken)
 		return domain.StatusDenied, ErrCodeExpired
 	}
 
-	if codeState.EntryToken != entryToken {
-		deny(entryToken)
-		return domain.StatusDenied, ErrInvalidCode
-	}
-
-	authState, ok := storage.GetAuthState(entryToken)
+	authState, ok := storage.GetAuthState(codeState.EntryToken)
 	if !ok {
 		return domain.StatusDenied, errors.New("auth state not found")
 	}
 
 	authState.Status = domain.StatusApproved
-	storage.SaveAuthState(authState, entryToken)
+	storage.SaveAuthState(authState, codeState.EntryToken)
 
 	return authState.Status, nil
 }

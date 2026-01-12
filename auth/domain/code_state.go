@@ -9,8 +9,9 @@ type CodeState struct {
 
 
 type VerifyCodeRequest struct {
-    EntryToken string `json:"entry_token"`
+    // EntryToken string `json:"entry_token"`
     Code       string `json:"code"`
+    RefreshToken string `json:"refresh_token"`
 }
 
 type VerifyCodeResponse struct {
