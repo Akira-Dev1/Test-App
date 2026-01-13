@@ -16,6 +16,6 @@ struct UserAnswer {
 };
 
 struct AttemptDetails {
-    int user_id;
+    std::string user_id;
     std::vector<UserAnswer> answers;
 };

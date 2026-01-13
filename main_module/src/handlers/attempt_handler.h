@@ -26,12 +26,12 @@ inline void registerAttemptRoutes(crow::SimpleApp& app, DB& db) {
                 false, 
                 nullptr
             };
-            if (checkAccess(ctx, rule, 0).code != 200) {
+            if (checkAccess(ctx, rule, "").code != 200) {
                 return crow::response(403, "Forbidden: Only course teacher can view results");
             }
         }
 
-        std::vector<int> users = db.getUsersWhoPassedTest(testId);
+        std::vector<std::string> users = db.getUsersWhoPassedTest(testId);
 
         crow::json::wvalue res;
         res["user_ids"] = std::move(users);
@@ -55,7 +55,7 @@ inline void registerAttemptRoutes(crow::SimpleApp& app, DB& db) {
             nullptr
         };
 
-        bool hasGlobalRead = (checkAccess(ctx, rule, 0).code == 200);
+        bool hasGlobalRead = (checkAccess(ctx, rule, "").code == 200);
         bool isAuthor = (ctx.userId == course.author_id || hasGlobalRead);
 
         auto scores = db.getTestScores(testId, ctx.userId, isAuthor);
@@ -93,7 +93,7 @@ inline void registerAttemptRoutes(crow::SimpleApp& app, DB& db) {
             false, 
             nullptr
         };
-        bool hasGlobalRead = (checkAccess(ctx, rule, 0).code == 200);
+        bool hasGlobalRead = (checkAccess(ctx, rule, "").code == 200);
         bool isAuthor = (ctx.userId == course.author_id || hasGlobalRead);
 
         auto details = db.getTestAttemptDetails(testId, ctx.userId, isAuthor);
@@ -183,7 +183,7 @@ inline void registerAttemptRoutes(crow::SimpleApp& app, DB& db) {
 
         bool isOwner = db.isAttemptOwnedBy(attemptId, ctx.userId);
         PermissionRule updateRule{"answer:update", false, nullptr};
-        bool hasPermission = (checkAccess(ctx, updateRule, 0).code == 200);
+        bool hasPermission = (checkAccess(ctx, updateRule, "").code == 200);
 
         if (!isOwner && !hasPermission) {
             return crow::response(403, "Forbidden: Access denied");
@@ -210,7 +210,7 @@ inline void registerAttemptRoutes(crow::SimpleApp& app, DB& db) {
 
         bool isOwner = db.isAttemptOwnedBy(attemptId, ctx.userId);
         PermissionRule delRule{"answer:del", false, nullptr};
-        bool hasPermission = (checkAccess(ctx, delRule, 0).code == 200);
+        bool hasPermission = (checkAccess(ctx, delRule, "").code == 200);
 
         if (!isOwner && !hasPermission) {
             return crow::response(403, "Forbidden: Access denied");
@@ -241,8 +241,8 @@ inline void registerAttemptRoutes(crow::SimpleApp& app, DB& db) {
         }
     });
     // Посмотреть попытку
-    CROW_ROUTE(app, "/tests/<int>/attempts/<int>").methods("GET"_method)
-    ([&db](const crow::request& req, int testId, int targetUserId) {
+    CROW_ROUTE(app, "/tests/<int>/attempts/<string>").methods("GET"_method)
+    ([&db](const crow::request& req, int testId, std::string targetUserId) {
         UserContext ctx;
         auto auth = authGuard(req, ctx);
         if (auth == 418) return crow::response(403, "Blocked");
@@ -260,7 +260,7 @@ inline void registerAttemptRoutes(crow::SimpleApp& app, DB& db) {
             false, 
             nullptr
         };
-        bool hasPermission = (checkAccess(ctx, readRule, 0).code == 200);
+        bool hasPermission = (checkAccess(ctx, readRule, "").code == 200);
 
         if (!isOwner && !isAuthor && !hasPermission) {
             return crow::response(403, "Forbidden: You can only view your own attempts or must be a teacher");
@@ -275,8 +275,8 @@ inline void registerAttemptRoutes(crow::SimpleApp& app, DB& db) {
         return crow::response(200, std::move(attemptData));
     });
     // Просмотр ответов пользователя в конкретном тесте
-    CROW_ROUTE(app, "/tests/<int>/attempts/<int>/answers").methods("GET"_method)
-    ([&db](const crow::request& req, int testId, int targetUserId) {
+    CROW_ROUTE(app, "/tests/<int>/attempts/<string>/answers").methods("GET"_method)
+    ([&db](const crow::request& req, int testId, std::string targetUserId) {
         UserContext ctx;
         auto auth = authGuard(req, ctx);
         if (auth == 418) return crow::response(403, "Blocked");
@@ -295,7 +295,7 @@ inline void registerAttemptRoutes(crow::SimpleApp& app, DB& db) {
             false, 
             nullptr
         };
-        bool hasPermission = (checkAccess(ctx, readRule, 0).code == 200);
+        bool hasPermission = (checkAccess(ctx, readRule, "").code == 200);
 
         if (!isOwner && !isAuthor && !hasPermission) {
             return crow::response(403, "Forbidden: Access denied to view these answers");

@@ -2,7 +2,7 @@
 #include <iostream>
 
 // Начать попытку
-int DB::startTestAttempt(int testId, int userId) {
+int DB::startTestAttempt(int testId, std::string userId) {
     ensureConnection();
 
     const char* checkSql = "SELECT is_active, question_ids FROM tests WHERE id = $1::int AND is_deleted = false";
@@ -20,15 +20,14 @@ int DB::startTestAttempt(int testId, int userId) {
 
     const char* createSql = 
         "INSERT INTO test_attempts (user_id, test_id, questions_snapshot, user_answers, status, score) "
-        "SELECT $1::int, $2::int, to_jsonb(question_ids), "
+        "SELECT $1, $2::int, to_jsonb(question_ids), "
         "       (SELECT jsonb_object_agg(q_id, -1) FROM unnest(question_ids) AS q_id), "
         "       'in_progress', 0.0 "
         "FROM tests WHERE id = $2::int "
         "ON CONFLICT (user_id, test_id) DO NOTHING "
         "RETURNING id";
 
-    std::string uId = std::to_string(userId);
-    const char* aParams[] = { uId.c_str(), tId.c_str() };
+    const char* aParams[] = { userId.c_str(), tId.c_str() };
     PGresult* res = PQexecParams((PGconn*)conn, createSql, 2, nullptr, aParams, nullptr, nullptr, 0);
     
     int attemptId = -1;
@@ -102,7 +101,7 @@ bool DB::updateAttemptAnswer(int attemptId, int questionId, int answerIndex) {
 }
 
 // Список пользователей прошедших тест
-std::vector<int> DB::getUsersWhoPassedTest(int testId) {
+std::vector<std::string> DB::getUsersWhoPassedTest(int testId) {
     ensureConnection();
     std::string tId = std::to_string(testId);
     const char* params[] = { tId.c_str() };
@@ -119,12 +118,12 @@ std::vector<int> DB::getUsersWhoPassedTest(int testId) {
         return {};
     }
 
-    std::vector<int> userIds;
+    std::vector<std::string> userIds;
     int rows = PQntuples(res);
     userIds.reserve(rows);
 
     for (int i = 0; i < rows; i++) {
-        userIds.push_back(std::stoi(PQgetvalue(res, i, 0)));
+        userIds.push_back(PQgetvalue(res, i, 0));
     }
 
     PQclear(res);
@@ -132,17 +131,16 @@ std::vector<int> DB::getUsersWhoPassedTest(int testId) {
 }
 
 // Получить оценку пользователей (или себя)
-std::vector<UserScore> DB::getTestScores(int testId, int userIdFilter, bool isAuthor) {
+std::vector<UserScore> DB::getTestScores(int testId, std::string userIdFilter, bool isAuthor) {
     ensureConnection();
     std::string tId = std::to_string(testId);
-    std::string uId = std::to_string(userIdFilter);
     
     std::string sql = "SELECT user_id, score FROM test_attempts WHERE test_id = $1::int AND status = 'completed'";
     std::vector<const char*> params = { tId.c_str() };
 
     if (!isAuthor) {
-        sql += " AND user_id = $2::int";
-        params.push_back(uId.c_str());
+        sql += " AND user_id = $2";
+        params.push_back(userIdFilter.c_str());
     }
 
     PGresult* res = PQexecParams((PGconn*)conn, sql.c_str(), (int)params.size(), nullptr, params.data(), nullptr, nullptr, 0);
@@ -151,7 +149,7 @@ std::vector<UserScore> DB::getTestScores(int testId, int userIdFilter, bool isAu
     if (PQresultStatus(res) == PGRES_TUPLES_OK) {
         for (int i = 0; i < PQntuples(res); i++) {
             scores.push_back({
-                std::stoi(PQgetvalue(res, i, 0)),
+                PQgetvalue(res, i, 0),
                 std::stod(PQgetvalue(res, i, 1))
             });
         }
@@ -161,16 +159,15 @@ std::vector<UserScore> DB::getTestScores(int testId, int userIdFilter, bool isAu
 }
 
 // Посмотреть ответы пользователей (пользователя)
-std::vector<AttemptDetails> DB::getTestAttemptDetails(int testId, int userIdFilter, bool isAuthor) {
+std::vector<AttemptDetails> DB::getTestAttemptDetails(int testId, std::string userIdFilter, bool isAuthor) {
     ensureConnection();
     std::string tId = std::to_string(testId);
-    std::string uId = std::to_string(userIdFilter);
     std::string sql = "SELECT user_id, user_answers FROM test_attempts WHERE test_id = $1::int";
     std::vector<const char*> params = { tId.c_str() };
 
     if (!isAuthor) {
-        sql += " AND user_id = $2::int";
-        params.push_back(uId.c_str());
+        sql += " AND user_id = $2";
+        params.push_back(userIdFilter.c_str());
     }
 
     PGresult* res = PQexecParams((PGconn*)conn, sql.c_str(), (int)params.size(), nullptr, params.data(), nullptr, nullptr, 0);
@@ -179,7 +176,7 @@ std::vector<AttemptDetails> DB::getTestAttemptDetails(int testId, int userIdFilt
     if (PQresultStatus(res) == PGRES_TUPLES_OK) {
         for (int i = 0; i < PQntuples(res); i++) {
             AttemptDetails details;
-            details.user_id = std::stoi(PQgetvalue(res, i, 0));
+            details.user_id = PQgetvalue(res, i, 0);
             
             auto userAnswers = crow::json::load(PQgetvalue(res, i, 1));
             if (userAnswers && userAnswers.t() == crow::json::type::Object) {
@@ -201,12 +198,11 @@ std::vector<AttemptDetails> DB::getTestAttemptDetails(int testId, int userIdFilt
 }
 
 // Проверка на владение попыткой
-bool DB::isAttemptOwnedBy(int attemptId, int userId) {
+bool DB::isAttemptOwnedBy(int attemptId, std::string userId) {
     ensureConnection();
-    const char* sql = "SELECT 1 FROM test_attempts WHERE id = $1::int AND user_id = $2::int";
+    const char* sql = "SELECT 1 FROM test_attempts WHERE id = $1::int AND user_id = $2";
     std::string attId = std::to_string(attemptId);
-    std::string uId = std::to_string(userId);
-    const char* params[] = { attId.c_str(), uId.c_str() };
+    const char* params[] = { attId.c_str(), userId.c_str() };
     PGresult* res = PQexecParams((PGconn*)conn, sql, 2, nullptr, params, nullptr, nullptr, 0);
     bool owned = (PQresultStatus(res) == PGRES_TUPLES_OK && PQntuples(res) > 0);
     PQclear(res);
@@ -226,12 +222,11 @@ bool DB::completeAttempt(int attemptId) {
 }
 
 // Посмотреть попытку
-crow::json::wvalue DB::getAttemptData(int testId, int userId) {
+crow::json::wvalue DB::getAttemptData(int testId, std::string userId) {
     ensureConnection();
     std::string tId = std::to_string(testId);
-    std::string uId = std::to_string(userId);
-    const char* params[] = { uId.c_str(), tId.c_str() };
-    const char* sql = "SELECT status, user_answers, questions_snapshot FROM test_attempts WHERE user_id = $1::int AND test_id = $2::int";
+    const char* params[] = { userId.c_str(), tId.c_str() };
+    const char* sql = "SELECT status, user_answers, questions_snapshot FROM test_attempts WHERE user_id = $1 AND test_id = $2::int";
     PGresult* res = PQexecParams((PGconn*)conn, sql, 2, nullptr, params, nullptr, nullptr, 0);
 
     crow::json::wvalue result;
@@ -247,16 +242,15 @@ crow::json::wvalue DB::getAttemptData(int testId, int userId) {
 }
 
 // Состояние ответов
-crow::json::wvalue DB::getAttemptAnswers(int testId, int userId) {
+crow::json::wvalue DB::getAttemptAnswers(int testId, std::string userId) {
     ensureConnection();
     
     std::string tId = std::to_string(testId);
-    std::string uId = std::to_string(userId);
-    const char* params[] = { uId.c_str(), tId.c_str() };
+    const char* params[] = { userId.c_str(), tId.c_str() };
 
     const char* sql = 
         "SELECT status, user_answers "
-        "FROM test_attempts WHERE user_id = $1::int AND test_id = $2::int";
+        "FROM test_attempts WHERE user_id = $1 AND test_id = $2::int";
 
     PGresult* res = PQexecParams((PGconn*)conn, sql, 2, nullptr, params, nullptr, nullptr, 0);
 

@@ -1,10 +1,10 @@
 #include "db.h"
 
 // Посмотреть информацию о пользователе (курсы, оценки, попытки)
-crow::json::wvalue DB::getUserDataProfile(int userId, bool includeCourses, bool includeTests, bool includeGrades) {
+crow::json::wvalue DB::getUserDataProfile(std::string userId, bool includeCourses, bool includeTests, bool includeGrades) {
     ensureConnection();
     crow::json::wvalue result;
-    std::string idStr = std::to_string(userId);
+    std::string idStr = userId;
     const char* paramValues[1] = { idStr.c_str() };
 
     if (includeCourses) {

@@ -6,6 +6,7 @@
 #include "question_handler.h"
 #include "attempt_handler.h"
 #include "user_handler.h"
+#include "notification_handler.h"
 #include "../db/db.h"
 #include "../security/jwt.h"
 #include "../security/access.h"
@@ -18,4 +19,5 @@ inline void registerRoutes(crow::SimpleApp& app, DB& db) {
     registerQuestionRoutes(app, db);
     registerAttemptRoutes(app, db);
     registerUserRoutes(app, db);
+    registerNotificationRoutes(app, db);
 }

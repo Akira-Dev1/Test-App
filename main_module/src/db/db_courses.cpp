@@ -44,7 +44,7 @@ Course DB::getCourseById(int courseId) {
         std::stoi(PQgetvalue(res, 0, 0)),
         PQgetvalue(res, 0, 1),
         PQgetvalue(res, 0, 2),
-        std::stoi(PQgetvalue(res, 0, 3)),
+        PQgetvalue(res, 0, 3),
         std::string(PQgetvalue(res, 0, 4)) == "t"
     };
     PQclear(res);
@@ -52,13 +52,12 @@ Course DB::getCourseById(int courseId) {
 }
 
 // Создание курса
-int DB::createCourse(const std::string& title, const std::string& description, int authorId) {
+int DB::createCourse(const std::string& title, const std::string& description, std::string authorId) {
     ensureConnection();
-    std::string tIdStr = std::to_string(authorId);
     const char* paramValues[3] = { 
         title.c_str(), 
         description.c_str(), 
-        tIdStr.c_str() 
+        authorId.c_str() 
     };
 
     PGresult* res = PQexecParams(
@@ -125,20 +124,19 @@ bool DB::updateCourse(int courseId, std::string title, std::string description) 
 }
 
 // Добавление студента на курс
-bool DB::addStudentToCourse(int courseId, int userId) {
+bool DB::addStudentToCourse(int courseId, std::string userId) {
     ensureConnection();
 
     std::string cIdStr = std::to_string(courseId);
-    std::string uIdStr = std::to_string(userId);
     
     const char* paramValues[2] = { 
         cIdStr.c_str(), 
-        uIdStr.c_str() 
+        userId.c_str() 
     };
 
     const char* sql = 
         "INSERT INTO course_students (course_id, user_id) "
-        "SELECT $1::int, $2::int "
+        "SELECT $1::int, $2 "
         "WHERE EXISTS (SELECT 1 FROM courses WHERE id = $1::int AND is_deleted = false) "
         "ON CONFLICT (course_id, user_id) DO NOTHING";
 
@@ -161,15 +159,14 @@ bool DB::addStudentToCourse(int courseId, int userId) {
 }
 
 // Удаление студента с курса
-bool DB::removeStudentFromCourse(int courseId, int userId) {
+bool DB::removeStudentFromCourse(int courseId, std::string userId) {
     ensureConnection();
 
     std::string cIdStr = std::to_string(courseId);
-    std::string uIdStr = std::to_string(userId);
     
     const char* paramValues[] = { 
         cIdStr.c_str(), 
-        uIdStr.c_str() 
+        userId.c_str() 
     };
 
     const char* sql = 
@@ -195,11 +192,11 @@ bool DB::removeStudentFromCourse(int courseId, int userId) {
 }
 
 // Список всех студентов курса
-std::vector<int> DB::getStudentIdsByCourseId(int courseId) {
+std::vector<std::string> DB::getStudentIdsByCourseId(int courseId) {
     ensureConnection();
 
     std::string cIdStr = std::to_string(courseId);
-    std::vector<int> studentIds;
+    std::vector<std::string> studentIds;
     const char* paramValues[] = { 
         cIdStr.c_str(), 
     };
@@ -225,7 +222,7 @@ std::vector<int> DB::getStudentIdsByCourseId(int courseId) {
     for (int i = 0; i < rows; i++) {
         const char* val = PQgetvalue(res, i, 0);
         if (val) {
-            studentIds.push_back(std::stoi(val));
+            studentIds.push_back(val);
         }
     }
 

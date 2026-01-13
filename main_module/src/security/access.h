@@ -7,13 +7,13 @@
 struct PermissionRule {
     std::string permission;
     bool defaultAllowed = false;
-    std::function<bool(const UserContext&, int)> checkDefault;
+    std::function<bool(const UserContext&, std::string)> checkDefault;
 };
 
 inline crow::response checkAccess(
     const UserContext& ctx,
     const PermissionRule& rule,
-    int resourceOwnerId = -1
+    std::string resourceOwnerId
 ) {
     if (ctx.blocked) {
         return crow::response(403);
@@ -36,7 +36,7 @@ inline crow::response checkAccess(
 inline bool hasPermission(
     const UserContext& ctx,
     const std::string& permission,
-    int resourceOwnerId = -1
+    std::string resourceOwnerId
 ) {
     PermissionRule rule;
     rule.permission = permission;

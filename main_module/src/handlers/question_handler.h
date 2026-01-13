@@ -18,7 +18,7 @@ inline void registerQuestionRoutes(crow::SimpleApp& app, DB& db) {
             "quest:create", 
             false, 
             nullptr};
-        if (checkAccess(ctx, rule, 0).code != 200) {
+        if (checkAccess(ctx, rule, "").code != 200) {
             return crow::response(403, "Forbidden: Cannot create questions");
         }
 
@@ -63,7 +63,7 @@ inline void registerQuestionRoutes(crow::SimpleApp& app, DB& db) {
                 false, 
                 nullptr
             };
-            if (checkAccess(ctx, rule, 0).code != 200) {
+            if (checkAccess(ctx, rule, "").code != 200) {
                 return crow::response(403, "Forbidden: You can only delete your own questions");
             }
         }
@@ -90,7 +90,7 @@ inline void registerQuestionRoutes(crow::SimpleApp& app, DB& db) {
             false, 
             nullptr
         };
-        if (checkAccess(ctx, rule, 0).code != 200 && q.author_id != ctx.userId) {
+        if (checkAccess(ctx, rule, "").code != 200 && q.author_id != ctx.userId) {
             return crow::response(403, "Forbidden: Missing quest:update permission");
         }
 
@@ -150,7 +150,7 @@ inline void registerQuestionRoutes(crow::SimpleApp& app, DB& db) {
             false, 
             nullptr
         };
-        bool hasGlobalRead = (checkAccess(ctx, rule, 0).code == 200);
+        bool hasGlobalRead = (checkAccess(ctx, rule, "").code == 200);
 
         Question q = db.getQuestionByIdAndVersion(questionId, version);
         if (q.id == 0) return crow::response(404, "Question not found");
@@ -177,7 +177,7 @@ inline void registerQuestionRoutes(crow::SimpleApp& app, DB& db) {
             "quest:list:read", 
             false, 
             nullptr};
-        bool canSeeAll = (checkAccess(ctx, rule, 0).code == 200);
+        bool canSeeAll = (checkAccess(ctx, rule, "").code == 200);
 
         auto questions = db.getQuestionsList(ctx.userId, canSeeAll);
 

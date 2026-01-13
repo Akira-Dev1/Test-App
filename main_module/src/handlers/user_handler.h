@@ -8,8 +8,8 @@
 
 inline void registerUserRoutes(crow::SimpleApp& app, DB& db) {
     // Информация о пользователе (курсы, оценки, тесты)
-    CROW_ROUTE(app, "/users/<int>/data").methods("GET"_method)
-    ([&db](const crow::request& req, int targetUserId) {
+    CROW_ROUTE(app, "/users/<string>/data").methods("GET"_method)
+    ([&db](const crow::request& req, std::string targetUserId) {
         UserContext ctx;
         auto auth = authGuard(req, ctx);
         if (auth == 418) return crow::response(403, "Blocked");
@@ -21,7 +21,7 @@ inline void registerUserRoutes(crow::SimpleApp& app, DB& db) {
             "user:data:read", 
             false, 
             nullptr};
-        bool hasAdminPermission = (checkAccess(ctx, readRule, 0).code == 200);
+        bool hasAdminPermission = (checkAccess(ctx, readRule, "").code == 200);
 
         if (!isOwner && !hasAdminPermission) {
             return crow::response(403, "Forbidden: You can only view your own data");
@@ -53,7 +53,7 @@ inline void registerUserRoutes(crow::SimpleApp& app, DB& db) {
             nullptr
         };
 
-        if (checkAccess(ctx, readRule, 0).code != 200) {
+        if (checkAccess(ctx, readRule, "").code != 200) {
             return crow::response(403, "Forbidden");
         }
 
@@ -75,8 +75,8 @@ inline void registerUserRoutes(crow::SimpleApp& app, DB& db) {
         }
     });
     // Посмотреть информацию о пользователе (ФИО)
-    CROW_ROUTE(app, "/users/<int>").methods("GET"_method)
-    ([&db](const crow::request& req, int targetUserId) {
+    CROW_ROUTE(app, "/users/<string>").methods("GET"_method)
+    ([&db](const crow::request& req, std::string targetUserId) {
         UserContext ctx;
         auto auth = authGuard(req, ctx);
         if (auth == 418) return crow::response(403, "Blocked");
@@ -100,8 +100,8 @@ inline void registerUserRoutes(crow::SimpleApp& app, DB& db) {
         }
     });
     // Изменить ФИО пользователя
-    CROW_ROUTE(app, "/users/<int>/name").methods("PUT"_method)
-    ([&db](const crow::request& req, int targetUserId) {
+    CROW_ROUTE(app, "/users/<string>/name").methods("PUT"_method)
+    ([&db](const crow::request& req, std::string targetUserId) {
         UserContext ctx;
         auto auth = authGuard(req, ctx);
         if (auth == 418) return crow::response(403, "Blocked");
@@ -115,7 +115,7 @@ inline void registerUserRoutes(crow::SimpleApp& app, DB& db) {
             nullptr
         };
 
-        bool hasAdminRule = (checkAccess(ctx, readRule, 0).code == 200);
+        bool hasAdminRule = (checkAccess(ctx, readRule, "").code == 200);
 
         if (!isSelf && !hasAdminRule) {
             return crow::response(403, "Forbidden: You can only change your own name");
@@ -146,8 +146,8 @@ inline void registerUserRoutes(crow::SimpleApp& app, DB& db) {
         }
     });
     // Посмотреть роли пользователя
-    CROW_ROUTE(app, "/users/<int>/roles").methods("GET"_method)
-    ([&db](const crow::request& req, int targetUserId) {
+    CROW_ROUTE(app, "/users/<string>/roles").methods("GET"_method)
+    ([&db](const crow::request& req, std::string targetUserId) {
         UserContext ctx;
         auto auth = authGuard(req, ctx);
         if (auth == 418) return crow::response(403, "Blocked");
@@ -159,7 +159,7 @@ inline void registerUserRoutes(crow::SimpleApp& app, DB& db) {
             nullptr
         };
 
-        if (checkAccess(ctx, readRule, 0).code != 200) {
+        if (checkAccess(ctx, readRule, "").code != 200) {
             return crow::response(403, "Forbidden");
         }
 
@@ -181,8 +181,8 @@ inline void registerUserRoutes(crow::SimpleApp& app, DB& db) {
         }
     });
     // Изменить роли пользователю
-    CROW_ROUTE(app, "/users/<int>/roles").methods("PUT"_method)
-    ([&db](const crow::request& req, int targetUserId) {
+    CROW_ROUTE(app, "/users/<string>/roles").methods("PUT"_method)
+    ([&db](const crow::request& req, std::string targetUserId) {
         UserContext ctx;
         auto auth = authGuard(req, ctx);
         if (auth == 418) return crow::response(403, "Blocked");
@@ -194,7 +194,7 @@ inline void registerUserRoutes(crow::SimpleApp& app, DB& db) {
             nullptr
         };
 
-        if (checkAccess(ctx, readRule, 0).code != 200) {
+        if (checkAccess(ctx, readRule, "").code != 200) {
             return crow::response(403, "Forbidden");
         }
 
@@ -222,8 +222,8 @@ inline void registerUserRoutes(crow::SimpleApp& app, DB& db) {
         }
     });
     // Посмотреть заблокирован ли пользователь
-    CROW_ROUTE(app, "/users/<int>/block-status").methods("GET"_method)
-    ([&db](const crow::request& req, int targetUserId) {
+    CROW_ROUTE(app, "/users/<string>/block-status").methods("GET"_method)
+    ([&db](const crow::request& req, std::string targetUserId) {
         UserContext ctx;
         auto auth = authGuard(req, ctx);
         if (auth == 418) return crow::response(403, "Blocked");
@@ -235,7 +235,7 @@ inline void registerUserRoutes(crow::SimpleApp& app, DB& db) {
             nullptr
         };
 
-        if (checkAccess(ctx, readRule, 0).code != 200) {
+        if (checkAccess(ctx, readRule, "").code != 200) {
             return crow::response(403, "Forbidden");
         }
 
@@ -257,8 +257,8 @@ inline void registerUserRoutes(crow::SimpleApp& app, DB& db) {
         }
     });
     // Заблокировать/Разблокировать пользователя
-    CROW_ROUTE(app, "/users/<int>/block").methods("POST"_method)
-    ([&db](const crow::request& req, int targetUserId) {
+    CROW_ROUTE(app, "/users/<string>/block").methods("POST"_method)
+    ([&db](const crow::request& req, std::string targetUserId) {
         UserContext ctx;
         auto auth = authGuard(req, ctx);
         if (auth == 418) return crow::response(403, "Blocked");
@@ -274,7 +274,7 @@ inline void registerUserRoutes(crow::SimpleApp& app, DB& db) {
             nullptr
         };
 
-        if (checkAccess(ctx, readRule, 0).code != 200) {
+        if (checkAccess(ctx, readRule, "").code != 200) {
             return crow::response(403, "Forbidden");
         }
 

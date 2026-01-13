@@ -1,7 +1,7 @@
 #include "db.h"
 
 // Создание вопроса
-int DB::createQuestion(int authorId, const std::string& title, const std::string& content, 
+int DB::createQuestion(std::string authorId, const std::string& title, const std::string& content, 
                        const std::vector<std::string>& options, int correctOption) {
     ensureConnection();
 
@@ -17,7 +17,7 @@ int DB::createQuestion(int authorId, const std::string& title, const std::string
         "VALUES (nextval('questions_id_seq'), 1, $1, $2, $3, $4, $5) "
         "RETURNING id";
 
-    std::string aId = std::to_string(authorId);
+    std::string aId = authorId;
     std::string cOpt = std::to_string(correctOption);
     const char* params[] = { aId.c_str(), title.c_str(), content.c_str(), optionsStr.c_str(), cOpt.c_str() };
 
@@ -53,7 +53,7 @@ bool DB::deleteQuestion(int questionId) {
 }
 
 // Изменить вопрос
-int DB::updateQuestion(int questionId, int userId, const std::string& title, 
+int DB::updateQuestion(int questionId, std::string userId, const std::string& title, 
                        const std::string& content, const std::vector<std::string>& options, 
                        int correctOption) {
     ensureConnection();
@@ -69,7 +69,7 @@ int DB::updateQuestion(int questionId, int userId, const std::string& title,
     }
 
     int currentVersion = std::stoi(PQgetvalue(res, 0, 0));
-    int authorId = std::stoi(PQgetvalue(res, 0, 1));
+    std::string authorId = PQgetvalue(res, 0, 1);
     PQclear(res);
 
 
@@ -80,7 +80,7 @@ int DB::updateQuestion(int questionId, int userId, const std::string& title,
     crow::json::wvalue optionsJson(optList);
     std::string optionsStr = optionsJson.dump();
     std::string newVer = std::to_string(currentVersion + 1);
-    std::string aId = std::to_string(authorId);
+    std::string aId = authorId;
     std::string cOpt = std::to_string(correctOption);
 
     const char* insertSql = 
@@ -122,7 +122,7 @@ Question DB::getQuestionByIdAndVersion(int questionId, int version) {
     Question q;
     q.id = std::stoi(PQgetvalue(res, 0, 0));
     q.version = std::stoi(PQgetvalue(res, 0, 1));
-    q.author_id = std::stoi(PQgetvalue(res, 0, 2));
+    q.author_id = PQgetvalue(res, 0, 2);
     q.title = PQgetvalue(res, 0, 3);
     q.content = PQgetvalue(res, 0, 4);
     auto optionsJson = crow::json::load(PQgetvalue(res, 0, 5));
@@ -135,7 +135,7 @@ Question DB::getQuestionByIdAndVersion(int questionId, int version) {
 }
 
 // Получить список вопросов
-std::vector<Question> DB::getQuestionsList(int userId, bool canSeeAll) {
+std::vector<Question> DB::getQuestionsList(std::string userId, bool canSeeAll) {
     ensureConnection();
     
     std::string sql = 
@@ -143,26 +143,33 @@ std::vector<Question> DB::getQuestionsList(int userId, bool canSeeAll) {
         "FROM questions "
         "WHERE is_deleted = false ";
 
+    PGresult* res = nullptr;
     if (!canSeeAll) {
-        sql += " AND author_id = " + std::to_string(userId);
+        sql += " AND author_id = $1";
+        sql += " ORDER BY id, version DESC";
+        const char* params[] = { userId.c_str() };
+        res = PQexecParams((PGconn*)conn, sql.c_str(), 1, nullptr, params, nullptr, nullptr, 0);
+    } else {
+        sql += " ORDER BY id, version DESC";
+        res = PQexec((PGconn*)conn, sql.c_str());
     }
     
-    sql += " ORDER BY id, version DESC";
 
-    PGresult* res = PQexec((PGconn*)conn, sql.c_str());
     std::vector<Question> list;
 
-    if (PQresultStatus(res) == PGRES_TUPLES_OK) {
+    if (res && PQresultStatus(res) == PGRES_TUPLES_OK) {
         for (int i = 0; i < PQntuples(res); i++) {
             Question q;
             q.id = std::stoi(PQgetvalue(res, i, 0));
             q.version = std::stoi(PQgetvalue(res, i, 1));
-            q.author_id = std::stoi(PQgetvalue(res, i, 2));
+            q.author_id = PQgetvalue(res, i, 2);
             q.title = PQgetvalue(res, i, 3);
             list.push_back(q);
         }
     }
-    PQclear(res);
+    if (res) {
+        PQclear(res);
+    }
     return list;
 }
 
@@ -193,7 +200,7 @@ Question DB::getQuestionById(int questionId) {
     Question q;
     q.id = std::stoi(PQgetvalue(res, 0, 0));
     q.version = std::stoi(PQgetvalue(res, 0, 1));
-    q.author_id = std::stoi(PQgetvalue(res, 0, 2));
+    q.author_id = PQgetvalue(res, 0, 2);
     q.title = PQgetvalue(res, 0, 3);
     q.content = PQgetvalue(res, 0, 4);
 
@@ -212,22 +219,25 @@ Question DB::getQuestionById(int questionId) {
 }
 
 // Была ли попытка пройти тест с конекретный вопросом
-bool DB::hasUserAttemptForQuestion(int userId, int questionId) {
+bool DB::hasUserAttemptForQuestion(std::string userId, int questionId) {
     ensureConnection();
-    std::string uId = std::to_string(userId);
+    std::string uId = userId;
     std::string qId = std::to_string(questionId);
     const char* params[] = { uId.c_str(), qId.c_str() };
 
     const char* sql = 
         "SELECT 1 FROM test_attempts ta "
         "JOIN tests t ON ta.test_id = t.id "
-        "WHERE ta.user_id = $1::int "
+        "WHERE ta.user_id = $1 "
         "AND $2::int = ANY(t.question_ids) "
         "LIMIT 1";
 
     PGresult* res = PQexecParams((PGconn*)conn, sql, 2, nullptr, params, nullptr, nullptr, 0);
-    bool exists = (PQntuples(res) > 0);
-    PQclear(res);
+    bool exists = false;
+    if (res && PQresultStatus(res) == PGRES_TUPLES_OK) {
+        exists = (PQntuples(res) > 0);
+    }
+    if (res) PQclear(res);
     return exists;
 }
 

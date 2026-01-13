@@ -61,7 +61,7 @@ inline void registerCourseRoutes(crow::SimpleApp& app, DB& db) {
             false,
             nullptr
         };
-        auto check = checkAccess(ctx, rule, 0).code;
+        auto check = checkAccess(ctx, rule, "").code;
         if (check != 200) {
             return crow::response(check);
         } 
@@ -74,6 +74,9 @@ inline void registerCourseRoutes(crow::SimpleApp& app, DB& db) {
             body["description"].s(),
             ctx.userId
         );
+        if (id == -1) {
+            return crow::response(500, "Database error: check if title is unique or database is connected");
+        }
         crow::json::wvalue res;
         res["id"] = id;
         return crow::response(201, res);
@@ -98,7 +101,7 @@ inline void registerCourseRoutes(crow::SimpleApp& app, DB& db) {
         PermissionRule rule {
             "course:info:write",
             false,
-            [](const UserContext& ctx, int ownerId) {
+            [](const UserContext& ctx, std::string ownerId) {
                 return ctx.userId == ownerId;
             }
         };
@@ -131,14 +134,27 @@ inline void registerCourseRoutes(crow::SimpleApp& app, DB& db) {
         PermissionRule rule {
             "course:del",
             false,
-            [](const UserContext& ctx, int ownerId) {
+            [](const UserContext& ctx, std::string ownerId) {
                 return ctx.userId == ownerId;
             }
         };
         if (checkAccess(ctx, rule, course.author_id).code != 200) {
             return crow::response(403);
         } 
+
+        std::vector<std::string> studentIds = db.getStudentIdsByCourseId(courseId);
+        std::string title = course.title;
+
         db.deleteCourse(courseId);
+
+        for (auto sId : studentIds) {
+            db.pushNotification(
+                sId, 
+                "academic", 
+                "Курс удален", 
+                "Дисциплина '" + title + "' была удалена автором."
+            );
+        }
         return crow::response(204);
     });
     // Добавить пользователя на курс
@@ -154,7 +170,7 @@ inline void registerCourseRoutes(crow::SimpleApp& app, DB& db) {
             return crow::response(400, "Missing user_id in request body");
         }
 
-        int target_user_id = (int)json_data["user_id"].i();
+        std::string target_user_id = json_data["user_id"].s();
 
         if (ctx.userId != target_user_id) {
             PermissionRule rule{
@@ -162,13 +178,24 @@ inline void registerCourseRoutes(crow::SimpleApp& app, DB& db) {
                 false,
                 nullptr
             };
-            if (checkAccess(ctx, rule, 0).code != 200) {
+            if (checkAccess(ctx, rule, "").code != 200) {
                 return crow::response(403);
             }
         }
         if (!db.addStudentToCourse(courseId, target_user_id)) {
             return crow::response(404, "Course not found, is deleted, or user already joined");
         }
+
+        if (ctx.userId != target_user_id) {
+            auto course = db.getCourseById(courseId);
+            db.pushNotification(
+                target_user_id,
+                "academic",
+                "Зачисление",
+                "Вы были зачислены на курс: " + course.title
+            );
+        }
+
         return crow::response(204);
     });
     // Удалить пользователя из курса
@@ -184,7 +211,7 @@ inline void registerCourseRoutes(crow::SimpleApp& app, DB& db) {
             return crow::response(400, "Missing user_id in request body");
         }
 
-        int target_user_id = (int)json_data["user_id"].i();
+        std::string target_user_id = json_data["user_id"].s();
 
         if (ctx.userId != target_user_id) {
             PermissionRule rule{
@@ -192,11 +219,23 @@ inline void registerCourseRoutes(crow::SimpleApp& app, DB& db) {
                 false,
                 nullptr
             };
-            if (checkAccess(ctx, rule, 0).code != 200) {
+            if (checkAccess(ctx, rule, "").code != 200) {
                 return crow::response(403);
             }
         }
+
+        auto course = db.getCourseById(courseId);
+
         db.removeStudentFromCourse(courseId, target_user_id);
+
+        if (ctx.userId != target_user_id) {
+            db.pushNotification(
+                target_user_id,
+                "academic",
+                "Исключение",
+                "Вы были удалены из курса: " + course.title
+            );
+        }
         return crow::response(204);
     });
     // Список студентов на курсе
@@ -218,11 +257,11 @@ inline void registerCourseRoutes(crow::SimpleApp& app, DB& db) {
                 false,
                 nullptr
             };
-            if (checkAccess(ctx, rule, 0).code != 200) {
+            if (checkAccess(ctx, rule, "").code != 200) {
                 return crow::response(403, "Forbidden");
             }
         }
-        std::vector<int> studentIds = db.getStudentIdsByCourseId(courseId);
+        std::vector<std::string> studentIds = db.getStudentIdsByCourseId(courseId);
         crow::json::wvalue response;
         response["student_ids"] = std::move(studentIds); 
 

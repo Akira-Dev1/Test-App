@@ -1,6 +1,7 @@
 #include "jwt.h"
 #include <jwt-cpp/jwt.h>
 #include <cstdlib>
+#include <string>
 
 // Реализация проверки JWT
 
@@ -24,7 +25,7 @@ UserContext parseAndVerifyJWT(const crow::request& req) {
 
         jwt::verify()
             .allow_algorithm(jwt::algorithm::hs256{jwt_secret})
-            .with_leeway(10)
+            .leeway(10)
             .verify(decoded);
         
         UserContext ctx;
@@ -40,7 +41,7 @@ UserContext parseAndVerifyJWT(const crow::request& req) {
         }
 
         return ctx;
-    } catch (const jwt::token_verification_exception& e) {
+    } catch (const jwt::error::token_verification_exception& e) {
         throw std::runtime_error("Token expired or invalid: " + std::string(e.what()));
     } catch (const std::exception& e) {
         throw std::runtime_error("Auth error: " + std::string(e.what()));

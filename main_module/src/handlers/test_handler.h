@@ -6,7 +6,7 @@
 #include "../security/auth_guard.h"
 
 inline void registerTestRoutes(crow::SimpleApp& app, DB& db) {
-    // Получение тестов по курсу ccc
+    // Получение тестов по курсу
     CROW_ROUTE(app, "/courses/<int>/tests").methods("GET"_method)
     ([&db](const crow::request& req, int courseId) {
         UserContext ctx;
@@ -27,7 +27,7 @@ inline void registerTestRoutes(crow::SimpleApp& app, DB& db) {
             false, 
             nullptr
         };
-        bool isAdmin = (checkAccess(ctx, adminRule, 0).code == 200);
+        bool isAdmin = (checkAccess(ctx, adminRule, "").code == 200);
 
         if (!isAuthor && !isEnrolled && !isAdmin) {
             return crow::response(403, "Access denied. You must be enrolled or be the author.");
@@ -46,7 +46,7 @@ inline void registerTestRoutes(crow::SimpleApp& app, DB& db) {
         res["tests"] = std::move(test_list);
         return crow::response(200, res);
     });
-    // Создание теста по курсу ccc
+    // Создание теста по курсу
     CROW_ROUTE(app, "/courses/<int>/tests").methods("POST"_method)
     ([&db](const crow::request& req, int courseId) {
         UserContext ctx;
@@ -65,7 +65,7 @@ inline void registerTestRoutes(crow::SimpleApp& app, DB& db) {
                 false, 
                 nullptr
             };
-            if (checkAccess(ctx, rule, 0).code != 200) {
+            if (checkAccess(ctx, rule, "").code != 200) {
                 return crow::response(403, "Forbidden");
             }
         }
@@ -88,7 +88,7 @@ inline void registerTestRoutes(crow::SimpleApp& app, DB& db) {
     });
 
 
-    // Удаление теста по id ccc
+    // Удаление теста по id
     CROW_ROUTE(app, "/tests/<int>").methods("DELETE"_method)
     ([&db](const crow::request& req, int testId) {
         UserContext ctx;
@@ -109,12 +109,21 @@ inline void registerTestRoutes(crow::SimpleApp& app, DB& db) {
                 false, 
                 nullptr
             };
-            if (checkAccess(ctx, rule, 0).code != 200) {
+            if (checkAccess(ctx, rule, "").code != 200) {
                 return crow::response(403, "Forbidden: Only course author can delete tests");
             }
         }
 
         if (db.deleteTest(testId)) {
+            auto studentIds = db.getStudentIdsByCourseId(test.course_id);
+            for (auto sId : studentIds) {
+                db.pushNotification(
+                    sId,
+                    "academic",
+                    "Тест удален",
+                    "Тест '" + test.title + "' был удален из курса '" + course.title + "'."
+                );
+            }
             return crow::response(204);
         } else {
             return crow::response(500, "Database error during deletion");
@@ -143,7 +152,7 @@ inline void registerTestRoutes(crow::SimpleApp& app, DB& db) {
             false, 
             nullptr
         };
-        bool isAdmin = (checkAccess(ctx, adminRule, 0).code == 200);
+        bool isAdmin = (checkAccess(ctx, adminRule, "").code == 200);
 
         if (!isAuthor && !isEnrolled && !isAdmin) {
             return crow::response(403, "Forbidden: You are not enrolled in this course");
@@ -174,7 +183,7 @@ inline void registerTestRoutes(crow::SimpleApp& app, DB& db) {
                 false, 
                 nullptr
             };
-            if (checkAccess(ctx, rule, 0).code != 200) {
+            if (checkAccess(ctx, rule, "").code != 200) {
                 return crow::response(403, "Only course author can toggle test status");
             }
         }
@@ -189,8 +198,31 @@ inline void registerTestRoutes(crow::SimpleApp& app, DB& db) {
             return crow::response(500, "Failed to update test status");
         }
 
-        if (newStatus == false) {
+        if (newStatus) {
+            auto studentIds = db.getStudentIdsByCourseId(courseId);
+            for (auto sId : studentIds) {
+                db.pushNotification(
+                    sId,
+                    "academic",
+                    "Доступен новый тест",
+                    "В курсе '" + course.title + "' открыт тест: " + test.title,
+                    {{"test_id", testId}, {"course_id", courseId}}
+                );
+            }
+        } else {
+            auto usersInProcess = db.getUsersWhoPassedTest(testId);
+
             db.finalizeAllTestAttempts(testId);
+
+            for (auto uId : usersInProcess) {
+                db.pushNotification(
+                    uId,
+                    "academic",
+                    "Тест завершен",
+                    "Преподаватель закрыл тест '" + test.title + "'. Ваша попытка сохранена автоматически.",
+                    {{"test_id", testId}}
+                );
+            }
         }
 
         return crow::response(204);
@@ -214,7 +246,7 @@ inline void registerTestRoutes(crow::SimpleApp& app, DB& db) {
                 false, 
                 nullptr
             };
-            if (checkAccess(ctx, rule, 0).code != 200) {
+            if (checkAccess(ctx, rule, "").code != 200) {
                 return crow::response(403, "Forbidden: You must be a course teacher or have test:quest:del permission");
             }
         }
@@ -245,7 +277,7 @@ inline void registerTestRoutes(crow::SimpleApp& app, DB& db) {
                 false, 
                 nullptr
             };
-            if (checkAccess(ctx, rule, 0).code != 200) {
+            if (checkAccess(ctx, rule, "").code != 200) {
                 return crow::response(403, "Forbidden: You must be the course teacher AND the question author");
             }
         }
@@ -274,7 +306,7 @@ inline void registerTestRoutes(crow::SimpleApp& app, DB& db) {
                 false, 
                 nullptr
             };
-            if (checkAccess(ctx, rule, 0).code != 200) {
+            if (checkAccess(ctx, rule, "").code != 200) {
                 return crow::response(403, "Forbidden: Only course teacher can reorder questions");
             }
         }

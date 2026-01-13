@@ -28,6 +28,7 @@ add_executable(core
     src/db/db_questions.cpp
     src/db/db_attempts.cpp
     src/db/db_user.cpp
+    src/db/db_notifications.cpp
     src/security/jwt.cpp
 )
 

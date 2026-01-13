@@ -5,7 +5,7 @@
 struct Question {
     int id = 0;
     int version = 1;
-    int author_id = 0;
+    std::string author_id;
     std::string title;
     std::string content;
     std::vector<std::string> options;

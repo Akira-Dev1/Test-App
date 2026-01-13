@@ -66,15 +66,14 @@ std::vector<Test> DB::getTestsByCourseId(int courseId) {
 }
 
 // Создание теста (привязанного к курсу)
-int DB::createTest(int courseId, const std::string& title, int authorId) {
+int DB::createTest(int courseId, const std::string& title, std::string authorId) {
     ensureConnection();
 
     std::string cIdStr = std::to_string(courseId);
-    std::string aIdStr = std::to_string(authorId);
     const char* paramValues[3] = { 
         cIdStr.c_str(), 
         title.c_str(), 
-        aIdStr.c_str() 
+        authorId.c_str() 
     };
 
     const char* sql = 
@@ -157,12 +156,11 @@ void DB::finalizeAllTestAttempts(int testId) {
 }
 
 // Проверка записи на курс
-bool DB::isUserEnrolled(int courseId, int userId) {
+bool DB::isUserEnrolled(int courseId, std::string userId) {
     ensureConnection();
 
     std::string cId = std::to_string(courseId);
-    std::string uId = std::to_string(userId);
-    const char* params[] = { cId.c_str(), uId.c_str() };
+    const char* params[] = { cId.c_str(), userId.c_str() };
 
     const char* sql = 
         "SELECT 1 FROM course_students WHERE course_id = $1 AND user_id = $2";
