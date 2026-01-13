@@ -13,17 +13,17 @@ import (
 )
 
 
-type UserInf struct {
+type UserList struct {
 	ID        primitive.ObjectID     `bson:"_id,omitempty"`
 	Name      string                 `bson:"name"`
 }
 
 
-func GetUserList() ([]UserInf, error) {
+func GetUserList() ([]UserList, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	var users []UserInf
+	var users []UserList
 
 	projection := bson.M{
 		"_id":  1,
@@ -37,7 +37,7 @@ func GetUserList() ([]UserInf, error) {
 	defer cursor.Close(ctx)
 
 	for cursor.Next(ctx) {
-		var user UserInf
+		var user UserList
 		if err := cursor.Decode(&user); err != nil {
 			log.Printf("Error decoding user basic info: %v", err)
 			continue
