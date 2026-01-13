@@ -70,3 +70,9 @@ func AddRefreshToken(userID primitive.ObjectID, token string) error {
     return err
 }
 
+
+
+// GetUserCollection - геттер для коллекции
+func GetUserCollection() *mongo.Collection {
+    return userCollection
+}

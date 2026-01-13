@@ -73,10 +73,6 @@ func VerifyCode(w http.ResponseWriter, r *http.Request) {
 
     storage.SaveAuthState(authState, codeState.EntryToken)
 
-	
-
-    w.Write([]byte("GitHub auth success"))
-
 
 	json.NewEncoder(w).Encode(domain.VerifyCodeResponse{
 		Status: string(status) + "254",

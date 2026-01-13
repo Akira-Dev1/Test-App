@@ -11,5 +11,5 @@ func RegisterRoutes() {
 	// logout
 	// yandex/callback
 
-	// main module 
+	http.HandleFunc("/userservice", UserService)
 }
