@@ -10,6 +10,10 @@ mongosh = Mongo Shell, это CLI-клиент для MongoDB
  - psql для PostgreSQL
  - mysql для MySQL
 
+
+$ docker compose exec mongo mongosh
+
+
 use authdb
 db.users.find().pretty() - Тут я:
  - Подключился к MongoDB

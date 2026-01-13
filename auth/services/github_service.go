@@ -58,13 +58,14 @@ func GithubAuth(code string) (*domain.User, error) {
     githubID := strconv.FormatInt(profile.ID, 10) // 10 - десятичная система
 
     newUser, err := storage.CreateUser(domain.User{
-		Email:         email,
-		GithubID:      &githubID,
-		// Roles:         []domain.Role{domain.RoleStudent},
-        Roles:         []string{string(domain.RoleStudent)},
-        Permissions: permissions.ResolvePermissions([]string{string(domain.RoleStudent)}),
-		RefreshTokens: []string{},
-		CreatedAt:     time.Now(),
+		Email:             email,
+		GithubID:          &githubID,
+        Name:              "Anonymous" + strconv.FormatInt(profile.ID + 14, 10),
+        Roles:             []string{string(domain.RoleStudent)},
+        Permissions:       permissions.ResolvePermissions([]string{string(domain.RoleStudent)}),
+		RefreshTokens:     []string{},
+        IsBlocked:         false,
+		CreatedAt:         time.Now(),
     })
     if err != nil {
         return nil, err

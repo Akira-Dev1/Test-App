@@ -7,4 +7,9 @@ func RegisterRoutes() {
 	http.HandleFunc("/login/check", LoginCheck)
 	http.HandleFunc("/login/verify", VerifyCode)
 	http.HandleFunc("/login/github/callback", GithubCallback)
+	// refresh
+	// logout
+	// yandex/callback
+
+	// main module 
 }

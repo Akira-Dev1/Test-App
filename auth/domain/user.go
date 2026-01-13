@@ -8,6 +8,7 @@ import (
 
 type User struct {
 	ID                primitive.ObjectID     `bson:"_id,omitempty"`
+	Name              string                 `bson:"name"`
 	Email             string                 `bson:"email,omitempty"`
 	GithubID          *string                `bson:"github_id,omitempty"`
 	YandexID          *string                `bson:"yandex_id,omitempty"`
@@ -15,6 +16,7 @@ type User struct {
 	Permissions       []string               `bson:"permissions"`
 	RefreshTokens     []string               `bson:"refresh_tokens"`
 	CreatedAt         time.Time              `bson:"created_at"`
+	IsBlocked         bool                   `bson:"is_blocked"`
 }
 
 
