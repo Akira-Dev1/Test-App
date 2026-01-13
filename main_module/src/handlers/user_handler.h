@@ -79,7 +79,7 @@ inline void registerUserRoutes(crow::SimpleApp& app, DB& db) {
         if (auth == 401) return crow::response(401, "Unauthorized");
 
         crow::json::wvalue cmd;
-        cmd["userId"] = targetUserId;
+        cmd["user_id"] = targetUserId;
 
         cpr::Response r = cpr::Post(
             cpr::Url{"http://localhost:8081/userservice"},
@@ -124,8 +124,8 @@ inline void registerUserRoutes(crow::SimpleApp& app, DB& db) {
         std::string newName = data["full_name"].s();
 
         crow::json::wvalue cmd;
-        cmd["userId"] = targetUserId;
-        cmd["newName"] = newName;
+        cmd["user_id"] = targetUserId;
+        cmd["new_name"] = newName;
 
         cpr::Response r = cpr::Post(
             cpr::Url{"http://localhost:8081/userservice"},
@@ -160,7 +160,7 @@ inline void registerUserRoutes(crow::SimpleApp& app, DB& db) {
         }
 
         crow::json::wvalue cmd;
-        cmd["userId"] = targetUserId;
+        cmd["user_id"] = targetUserId;
 
         cpr::Response r = cpr::Post(
             cpr::Url{"http://localhost:8081/userservice"},
@@ -200,7 +200,7 @@ inline void registerUserRoutes(crow::SimpleApp& app, DB& db) {
         }
 
         crow::json::wvalue cmd;
-        cmd["userId"] = targetUserId;
+        cmd["user_id"] = targetUserId;
         cmd["roles"] = data["roles"];
 
         cpr::Response r = cpr::Post(
@@ -236,7 +236,7 @@ inline void registerUserRoutes(crow::SimpleApp& app, DB& db) {
         }
 
         crow::json::wvalue cmd;
-        cmd["userId"] = targetUserId;
+        cmd["user_id"] = targetUserId;
 
         cpr::Response r = cpr::Post(
             cpr::Url{"http://localhost:8081/userservice"},
@@ -281,7 +281,7 @@ inline void registerUserRoutes(crow::SimpleApp& app, DB& db) {
         bool shouldBlock = data["is_blocked"].b();
 
         crow::json::wvalue cmd;
-        cmd["userId"] = targetUserId;
+        cmd["user_id"] = targetUserId;
         cmd["is_blocked"] = shouldBlock;
 
         cpr::Response r = cpr::Post(
