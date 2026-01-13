@@ -57,13 +57,9 @@ inline void registerUserRoutes(crow::SimpleApp& app, DB& db) {
             return crow::response(403, "Forbidden");
         }
 
-        crow::json::wvalue cmd;
-        cmd["action"] = "get_user_list";
-        cmd["payload"] = crow::json::wvalue::object();
-
         cpr::Response r = cpr::Get(
-            cpr::Url{"http://auth-service:18081/internal/users-data"},
-            cpr::Body{cmd.dump()},
+            cpr::Url{"http://localhost:8081/userservice"},
+            cpr::Parameters{{"type", "get_user_list"}}, 
             cpr::Header{{"Content-Type", "application/json"}},
             cpr::Timeout{3000}
         );
@@ -83,11 +79,11 @@ inline void registerUserRoutes(crow::SimpleApp& app, DB& db) {
         if (auth == 401) return crow::response(401, "Unauthorized");
 
         crow::json::wvalue cmd;
-        cmd["action"] = "get_user_info";
-        cmd["payload"]["userId"] = targetUserId;
+        cmd["userId"] = targetUserId;
 
         cpr::Response r = cpr::Post(
-            cpr::Url{"http://auth-service:8081/internal/users-data"},
+            cpr::Url{"http://localhost:8081/userservice"},
+            cpr::Parameters{{"type", "get_user_info"}}, 
             cpr::Body{cmd.dump()},
             cpr::Header{{"Content-Type", "application/json"}},
             cpr::Timeout{3000}
@@ -128,12 +124,12 @@ inline void registerUserRoutes(crow::SimpleApp& app, DB& db) {
         std::string newName = data["full_name"].s();
 
         crow::json::wvalue cmd;
-        cmd["action"] = "update_full_name";
-        cmd["payload"]["userId"] = targetUserId;
-        cmd["payload"]["newName"] = newName;
+        cmd["userId"] = targetUserId;
+        cmd["newName"] = newName;
 
         cpr::Response r = cpr::Post(
-            cpr::Url{"http://auth-service:8081/internal/users-data"},
+            cpr::Url{"http://localhost:8081/userservice"},
+            cpr::Parameters{{"type", "update_full_name"}}, 
             cpr::Body{cmd.dump()},
             cpr::Header{{"Content-Type", "application/json"}},
             cpr::Timeout{3000}
@@ -164,11 +160,11 @@ inline void registerUserRoutes(crow::SimpleApp& app, DB& db) {
         }
 
         crow::json::wvalue cmd;
-        cmd["action"] = "get_user_roles";
-        cmd["payload"]["userId"] = targetUserId;
+        cmd["userId"] = targetUserId;
 
         cpr::Response r = cpr::Post(
-            cpr::Url{"http://auth-service:8081/internal/users-data"},
+            cpr::Url{"http://localhost:8081/userservice"},
+            cpr::Parameters{{"type", "get_user_roles"}}, 
             cpr::Body{cmd.dump()},
             cpr::Header{{"Content-Type", "application/json"}},
             cpr::Timeout{3000}
@@ -204,12 +200,12 @@ inline void registerUserRoutes(crow::SimpleApp& app, DB& db) {
         }
 
         crow::json::wvalue cmd;
-        cmd["action"] = "update_user_roles";
-        cmd["payload"]["userId"] = targetUserId;
-        cmd["payload"]["roles"] = data["roles"];
+        cmd["userId"] = targetUserId;
+        cmd["roles"] = data["roles"];
 
         cpr::Response r = cpr::Post(
-            cpr::Url{"http://auth-service:8081/internal/users-data"},
+            cpr::Url{"http://localhost:8081/userservice"},
+            cpr::Parameters{{"type", "update_user_roles"}}, 
             cpr::Body{cmd.dump()},
             cpr::Header{{"Content-Type", "application/json"}},
             cpr::Timeout{3000}
@@ -240,11 +236,11 @@ inline void registerUserRoutes(crow::SimpleApp& app, DB& db) {
         }
 
         crow::json::wvalue cmd;
-        cmd["action"] = "get_user_block_status";
-        cmd["payload"]["userId"] = targetUserId;
+        cmd["userId"] = targetUserId;
 
         cpr::Response r = cpr::Post(
-            cpr::Url{"http://auth-service:8081/internal/users-data"},
+            cpr::Url{"http://localhost:8081/userservice"},
+            cpr::Parameters{{"type", "get_user_block_status"}}, 
             cpr::Body{cmd.dump()},
             cpr::Header{{"Content-Type", "application/json"}},
             cpr::Timeout{3000}
@@ -285,12 +281,12 @@ inline void registerUserRoutes(crow::SimpleApp& app, DB& db) {
         bool shouldBlock = data["is_blocked"].b();
 
         crow::json::wvalue cmd;
-        cmd["action"] = "set_block_status";
-        cmd["payload"]["userId"] = targetUserId;
-        cmd["payload"]["is_blocked"] = shouldBlock;
+        cmd["userId"] = targetUserId;
+        cmd["is_blocked"] = shouldBlock;
 
         cpr::Response r = cpr::Post(
-            cpr::Url{"http://auth-service:8081/internal/users-data"},
+            cpr::Url{"http://localhost:8081/userservice"},
+            cpr::Parameters{{"type", "set_block_status"}}, 
             cpr::Body{cmd.dump()},
             cpr::Header{{"Content-Type", "application/json"}},
             cpr::Timeout{3000}
