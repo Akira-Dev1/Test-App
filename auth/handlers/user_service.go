@@ -52,4 +52,23 @@ func UserService(w http.ResponseWriter, r *http.Request){
 		}
 		w.Write([]byte("Username successfully updated!"))
 	}
+
+
+	if r.URL.Query().Get("type") == "get_user_roles" {
+		var req user_service.GetRolesRequest
+
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			http.Error(w, "invalid request :<", http.StatusBadRequest)
+			return
+		}
+
+		roles, err := user_service.GetUserRoles(req.UserId)
+		if err != nil {
+		    http.Error(w, "no roles here :<", http.StatusBadRequest)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(roles)
+	}
 }
