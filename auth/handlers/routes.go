@@ -9,6 +9,6 @@ func RegisterRoutes() {
 	http.HandleFunc("/login/github/callback", GithubCallback)
 	http.HandleFunc("/refresh", Refresh)
 	// logout
-	// yandex/callback
+	http.HandleFunc("/yandex/callback", YandexCallback)
 	http.HandleFunc("/userservice", UserService)
 }

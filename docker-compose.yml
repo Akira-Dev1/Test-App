@@ -30,6 +30,9 @@ services:
       MONGO_URI: mongodb://mongo:27017
       GITHUB_CLIENT_ID: Ov23li4YURt6uH6rsHOL
       GITHUB_CLIENT_SECRET: fe15c95da6052b64f449dac3c716fd659f28e215
+      YANDEX_CLIENT_ID: e99e48c417274cd4928c888ef31439c6
+      YANDEX_CLIENT_SECRET: 468a8fcb30be408692f4579256e32d9e
+      YANDEX_REDIRECT_URI: http://localhost:8081/yandex/callback
     # volumes:
     #   - ./auth:/app
 

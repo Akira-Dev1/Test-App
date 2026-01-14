@@ -22,7 +22,7 @@ type githubTokenResponse struct {
 
 
 
-func ExchangeCodeForToken(code string) (string, error) {
+func ExchangeGithubCodeForToken(code string) (string, error) {
 	data := url.Values{}
 	data.Set("client_id", os.Getenv("GITHUB_CLIENT_ID"))
 	data.Set("client_secret", os.Getenv("GITHUB_CLIENT_SECRET"))

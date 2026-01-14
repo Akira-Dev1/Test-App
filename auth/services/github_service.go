@@ -14,7 +14,7 @@ import (
 )
 
 func GithubAuth(code string) (*domain.User, error) {
-    token, err := clients.ExchangeCodeForToken(code)
+    token, err := clients.ExchangeGithubCodeForToken(code)
     if err != nil {
         return nil, err
     }
@@ -41,10 +41,25 @@ func GithubAuth(code string) (*domain.User, error) {
         return nil, errors.New("no verified primary email")
     }
 
+    
+    githubID := strconv.FormatInt(profile.ID, 10) // 10 - десятичная система
+
     user, err := storage.FindUserByEmail(email)
     if err == nil {
-        // пользователь уже есть
-        return user, nil
+		if user.GithubID == nil || *user.GithubID == "" {
+			user.GithubID = &githubID
+			err := storage.UpdateUserGithubID(user.ID, githubID)
+			if err != nil {
+				log.Printf("Failed to update user with GithubID: %v\n", err)
+				// Продолжаем с существующим пользователем
+			}
+		} else if *user.GithubID != githubID {
+			// GithubID уже есть, но не совпадает
+			log.Printf("GithubID mismatch for user %s. Stored: %s, new: %s", 
+				user.Email, *user.GithubID, githubID)
+		}
+		
+		return user, nil
     }
 
     if err != mongo.ErrNoDocuments {
@@ -54,8 +69,6 @@ func GithubAuth(code string) (*domain.User, error) {
         return nil, err
     }
 
-    // пользователя нет — создаём
-    githubID := strconv.FormatInt(profile.ID, 10) // 10 - десятичная система
 
     newUser, err := storage.CreateUser(domain.User{
 		Email:             email,

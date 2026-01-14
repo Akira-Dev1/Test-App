@@ -99,3 +99,30 @@ func RemoveRefreshToken(userID primitive.ObjectID, token string) error {
 func GetUserCollection() *mongo.Collection {
     return userCollection
 }
+
+
+func UpdateUserYandexID(userID primitive.ObjectID, yandexID string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	
+	_, err := userCollection.UpdateOne(
+		ctx,
+		bson.M{"_id": userID},
+		bson.M{"$set": bson.M{"yandex_id": yandexID}},
+	)
+	
+	return err
+}
+
+func UpdateUserGithubID(userID primitive.ObjectID, githubID string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	
+	_, err := userCollection.UpdateOne(
+		ctx,
+		bson.M{"_id": userID},
+		bson.M{"$set": bson.M{"github_id": githubID}},
+	)
+	
+	return err
+}

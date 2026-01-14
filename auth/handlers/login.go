@@ -54,6 +54,39 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, githubAuthURL, http.StatusFound)
 
 
+
+	} else if r.URL.Query().Get("type") == "yandex" {
+		clientID := os.Getenv("YANDEX_CLIENT_ID")
+		if clientID == "" {
+			http.Error(w, "yandex client id not set", http.StatusInternalServerError)
+			return
+		}
+
+		var req LoginRequest
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.EntryToken == "" {
+			http.Error(w, "invalid request", http.StatusBadRequest)
+			return
+		}
+
+		authState := domain.AuthState{
+			Status:     domain.StatusPending,
+			ExpiresAt:  time.Now().Add(5 * time.Minute),
+		}
+		storage.SaveAuthState(authState, req.EntryToken)
+
+		params := url.Values{}
+		params.Add("client_id", clientID)
+		params.Add("response_type", "code")  // ОБЯЗАТЕЛЬНО для Яндекс
+		params.Add("state", req.EntryToken)
+		params.Add("redirect_uri", os.Getenv("YANDEX_REDIRECT_URI"))  // Обязательно
+		params.Add("scope", "login:email login:info")  // Яндекс scopes, а не GitHub
+
+		yandexAuthURL := "https://oauth.yandex.ru/authorize?" + params.Encode()
+
+		http.Redirect(w, r, yandexAuthURL, http.StatusFound)
+
+
+
 	} else if r.URL.Query().Get("type") == "code" {
 		var req LoginRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.EntryToken == "" {
@@ -84,3 +117,26 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+
+
+// else if r.URL.Query().Get("type") == "yandex" {
+//     clientID := os.Getenv("YANDEX_CLIENT_ID")
+//     if clientID == "" {
+//         http.Error(w, "yandex client id not set", http.StatusInternalServerError)
+//         return
+//     }
+
+//     var req LoginRequest
+//     if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.EntryToken == "" {
+//         http.Error(w, "invalid request", http.StatusBadRequest)
+//         return
+//     }
+
+//     authState := domain.AuthState{
+//         Status:     domain.StatusPending,
+//         ExpiresAt:  time.Now().Add(5 * time.Minute),
+//     }
+//     storage.SaveAuthState(authState, req.EntryToken)
+
+
+// }
