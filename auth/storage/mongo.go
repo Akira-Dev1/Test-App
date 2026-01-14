@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"time"
+	"errors"
 
 	"auth/config"
 	"auth/domain"
@@ -70,6 +71,28 @@ func AddRefreshToken(userID primitive.ObjectID, token string) error {
     return err
 }
 
+func RemoveRefreshToken(userID primitive.ObjectID, token string) error {
+	filter := bson.M{
+		"_id": userID,
+	}
+
+	update := bson.M{
+		"$pull": bson.M{
+			"refresh_tokens": token,
+		},
+	}
+
+	res, err := userCollection.UpdateOne(context.TODO(), filter, update)
+	if err != nil {
+		return err
+	}
+
+	if res.MatchedCount == 0 {
+		return errors.New("user not found")
+	}
+
+	return nil
+}
 
 
 // GetUserCollection - геттер для коллекции
