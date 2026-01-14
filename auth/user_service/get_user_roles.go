@@ -13,7 +13,7 @@ import (
 )
 
 type RolesResponse struct {
-	Roles []string `json:"roles"`
+	Roles []string `bson:"roles"`
 }
 
 type GetRolesRequest struct {

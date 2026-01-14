@@ -25,10 +25,8 @@ services:
     ports:
       - "8081:8081"
     depends_on:
-      - redis
       - mongo
     environment:
-      REDIS_ADDR: redis:6379
       MONGO_URI: mongodb://mongo:27017
       GITHUB_CLIENT_ID: Ov23li4YURt6uH6rsHOL
       GITHUB_CLIENT_SECRET: fe15c95da6052b64f449dac3c716fd659f28e215
