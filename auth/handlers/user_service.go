@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"encoding/json"
-	"log"
 	"net/http"
 
 	"auth/user_service"
@@ -47,7 +46,6 @@ func UserService(w http.ResponseWriter, r *http.Request){
 
 		if err := user_service.UpdateUserName(req.UserId, req.NewName); err != nil {
 			http.Error(w, "Couldn't update user :<", http.StatusNotFound)
-			log.Println("Couldn't update user :<", err)
 			return
 		}
 		w.Write([]byte("Username successfully updated!"))
@@ -70,5 +68,20 @@ func UserService(w http.ResponseWriter, r *http.Request){
 
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(roles)
+	}
+
+
+	if r.URL.Query().Get("type") == "update_user_roles" {
+		var req user_service.UpdateUserRolesRequest
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			http.Error(w, "invalid request :<", http.StatusBadRequest)
+			return
+		}
+
+		if err := user_service.UpdateUserRoles(req.UserId, req.Roles); err != nil {
+			http.Error(w, "Couldn't update user :<", http.StatusNotFound)
+			return
+		}
+		w.Write([]byte("Roles successfully updated!"))
 	}
 }

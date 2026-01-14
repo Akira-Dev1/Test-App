@@ -54,6 +54,13 @@ TCP-соединение
 В одном tcp-соединении может быть несколько HTTP-запросов, но все они идти будут строго по очереди, не параллельно (Если HTTP 1.1), если 2 или 3 - то могут  
 
 
+
+curl -X POST http://localhost:8081/login?type=github \
+  -H "Content-Type: application/json" \
+  -d '{"entry_token": "test_7"}'
+
+
+
 ***TOKENS (JWT)***
 
 В данном проекте 3 типа токенов:
