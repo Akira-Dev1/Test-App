@@ -19,11 +19,12 @@ type UserInfRequest struct {
 }
 
 func GetUserInfo(user_id_str string) (UserInf, error) {
-	// Конвертируем строку в ObjectID
-	user_id, _ := primitive.ObjectIDFromHex(user_id_str)
-	// if err != nil {
-	// 	return {}, err
-	// }
+	var user UserInf
+	
+	user_id, err := primitive.ObjectIDFromHex(user_id_str)
+	if err != nil {
+		return user, err
+	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5 * time.Second)
 	defer cancel()
@@ -35,8 +36,7 @@ func GetUserInfo(user_id_str string) (UserInf, error) {
 		"_id":  0, // Явно исключаем _id из результатов
 	})
 
-	var user UserInf
-	err := storage.GetUserCollection().FindOne(
+	err = storage.GetUserCollection().FindOne(
 		ctx, 
 		bson.M{"_id": user_id}, 
 		findOptions, // Передаем options.FindOneOptions

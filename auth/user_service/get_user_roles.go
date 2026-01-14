@@ -21,11 +21,13 @@ type GetRolesRequest struct {
 }
 
 func GetUserRoles(user_id_str string) (roles RolesResponse, err error) {
+	var roles_col RolesResponse
+
 	user_id, err := primitive.ObjectIDFromHex(user_id_str)
-	// if err != nil {
-	// 	log.Println("1")
-	// 	return , err
-	// }
+	if err != nil {
+		log.Println("1")
+		return roles_col, err
+	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5 * time.Second)
 	defer cancel()
@@ -37,7 +39,6 @@ func GetUserRoles(user_id_str string) (roles RolesResponse, err error) {
 		"_id":  0, // Явно исключаем _id из результатов
 	})
 
-	var roles_col RolesResponse
 	err = storage.GetUserCollection().FindOne(
 		ctx, 
 		bson.M{"_id": user_id}, 

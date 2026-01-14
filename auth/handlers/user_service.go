@@ -3,7 +3,6 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
-	"log"
 
 	"auth/user_service"
 )
@@ -98,7 +97,6 @@ func UserService(w http.ResponseWriter, r *http.Request){
 		status, err := user_service.GetUserBlockStatus(req.UserId)
 		if err != nil {
 		    http.Error(w, "no such user :<", http.StatusBadRequest)
-			log.Println("er: ", err)
 			return
 		}
 
