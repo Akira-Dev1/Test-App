@@ -95,6 +95,31 @@ func RemoveRefreshToken(userID primitive.ObjectID, token string) error {
 }
 
 
+
+func RemoveAllRefreshTokens(userID primitive.ObjectID) error {
+	filter := bson.M{
+		"_id": userID,
+	}
+
+	update := bson.M{
+		"$set": bson.M{
+			"refresh_tokens": []string{},
+		},
+	}
+
+	res, err := userCollection.UpdateOne(context.TODO(), filter, update)
+	if err != nil {
+		return err
+	}
+
+	if res.MatchedCount == 0 {
+		return errors.New("user not found")
+	}
+
+	return nil
+}
+
+
 // GetUserCollection - геттер для коллекции
 func GetUserCollection() *mongo.Collection {
     return userCollection
