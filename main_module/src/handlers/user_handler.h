@@ -58,9 +58,8 @@ inline void registerUserRoutes(crow::SimpleApp& app, DB& db) {
         }
 
         cpr::Response r = cpr::Get(
-            cpr::Url{"http://localhost:8081/userservice"},
-            cpr::Parameters{{"type", "get_user_list"}}, 
-            cpr::Header{{"Content-Type", "application/json"}},
+            cpr::Url{"http://auth:8081/userservice/get_user_list"},
+            cpr::Header{{"Content-Type", "application/json"},},
             cpr::Timeout{3000}
         );
 
@@ -79,11 +78,10 @@ inline void registerUserRoutes(crow::SimpleApp& app, DB& db) {
         if (auth == 401) return crow::response(401, "Unauthorized");
 
         crow::json::wvalue cmd;
-        cmd["userId"] = targetUserId;
+        cmd["user_id"] = targetUserId;
 
-        cpr::Response r = cpr::Post(
-            cpr::Url{"http://localhost:8081/userservice"},
-            cpr::Parameters{{"type", "get_user_info"}}, 
+        cpr::Response r = cpr::Get(
+            cpr::Url{"http://auth:8081/userservice/get_user_info"},
             cpr::Body{cmd.dump()},
             cpr::Header{{"Content-Type", "application/json"}},
             cpr::Timeout{3000}
@@ -96,7 +94,7 @@ inline void registerUserRoutes(crow::SimpleApp& app, DB& db) {
         }
     });
     // Изменить ФИО пользователя
-    CROW_ROUTE(app, "/users/<string>/name").methods("PUT"_method)
+    CROW_ROUTE(app, "/users/<string>/name").methods("PATCH"_method)
     ([&db](const crow::request& req, std::string targetUserId) {
         UserContext ctx;
         auto auth = authGuard(req, ctx);
@@ -124,12 +122,11 @@ inline void registerUserRoutes(crow::SimpleApp& app, DB& db) {
         std::string newName = data["full_name"].s();
 
         crow::json::wvalue cmd;
-        cmd["userId"] = targetUserId;
-        cmd["newName"] = newName;
+        cmd["user_id"] = targetUserId;
+        cmd["new_name"] = newName;
 
-        cpr::Response r = cpr::Post(
-            cpr::Url{"http://localhost:8081/userservice"},
-            cpr::Parameters{{"type", "update_full_name"}}, 
+        cpr::Response r = cpr::Patch(
+            cpr::Url{"http://auth:8081/userservice/update_full_name"},
             cpr::Body{cmd.dump()},
             cpr::Header{{"Content-Type", "application/json"}},
             cpr::Timeout{3000}
@@ -160,11 +157,10 @@ inline void registerUserRoutes(crow::SimpleApp& app, DB& db) {
         }
 
         crow::json::wvalue cmd;
-        cmd["userId"] = targetUserId;
+        cmd["user_id"] = targetUserId;
 
-        cpr::Response r = cpr::Post(
-            cpr::Url{"http://localhost:8081/userservice"},
-            cpr::Parameters{{"type", "get_user_roles"}}, 
+        cpr::Response r = cpr::Get(
+            cpr::Url{"http://auth:8081/userservice/get_user_roles"},
             cpr::Body{cmd.dump()},
             cpr::Header{{"Content-Type", "application/json"}},
             cpr::Timeout{3000}
@@ -177,7 +173,7 @@ inline void registerUserRoutes(crow::SimpleApp& app, DB& db) {
         }
     });
     // Изменить роли пользователю
-    CROW_ROUTE(app, "/users/<string>/roles").methods("PUT"_method)
+    CROW_ROUTE(app, "/users/<string>/roles").methods("PATCH"_method)
     ([&db](const crow::request& req, std::string targetUserId) {
         UserContext ctx;
         auto auth = authGuard(req, ctx);
@@ -200,12 +196,11 @@ inline void registerUserRoutes(crow::SimpleApp& app, DB& db) {
         }
 
         crow::json::wvalue cmd;
-        cmd["userId"] = targetUserId;
+        cmd["user_id"] = targetUserId;
         cmd["roles"] = data["roles"];
 
-        cpr::Response r = cpr::Post(
-            cpr::Url{"http://localhost:8081/userservice"},
-            cpr::Parameters{{"type", "update_user_roles"}}, 
+        cpr::Response r = cpr::Patch(
+            cpr::Url{"http://auth:8081/userservice/update_user_roles"},
             cpr::Body{cmd.dump()},
             cpr::Header{{"Content-Type", "application/json"}},
             cpr::Timeout{3000}
@@ -236,11 +231,10 @@ inline void registerUserRoutes(crow::SimpleApp& app, DB& db) {
         }
 
         crow::json::wvalue cmd;
-        cmd["userId"] = targetUserId;
+        cmd["user_id"] = targetUserId;
 
-        cpr::Response r = cpr::Post(
-            cpr::Url{"http://localhost:8081/userservice"},
-            cpr::Parameters{{"type", "get_user_block_status"}}, 
+        cpr::Response r = cpr::Get(
+            cpr::Url{"http://auth:8081/userservice/get_user_block_status"},
             cpr::Body{cmd.dump()},
             cpr::Header{{"Content-Type", "application/json"}},
             cpr::Timeout{3000}
@@ -281,12 +275,11 @@ inline void registerUserRoutes(crow::SimpleApp& app, DB& db) {
         bool shouldBlock = data["is_blocked"].b();
 
         crow::json::wvalue cmd;
-        cmd["userId"] = targetUserId;
+        cmd["user_id"] = targetUserId;
         cmd["is_blocked"] = shouldBlock;
 
         cpr::Response r = cpr::Post(
-            cpr::Url{"http://localhost:8081/userservice"},
-            cpr::Parameters{{"type", "set_block_status"}}, 
+            cpr::Url{"http://auth:8081/userservice/set_block_status"},
             cpr::Body{cmd.dump()},
             cpr::Header{{"Content-Type", "application/json"}},
             cpr::Timeout{3000}
