@@ -1,6 +1,6 @@
 version: "3.9"
 services:
-
+  
   frontend:
     build: ./frontend
     ports:
@@ -26,7 +26,7 @@ services:
       - pgdata:/var/lib/postgresql/data
       - ./main_module/db/init.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
-      - core_net
+      - app_net
 
   main_module:
     build: ./main_module
@@ -37,10 +37,71 @@ services:
     depends_on:
       - postgres
     networks:
-      - core_net
+      - app_net
+
+  auth:
+    build: ./auth
+    env_file:
+      - ./auth/.env
+    ports:
+      - "8081:8081"
+    depends_on:
+      - mongo
+    environment:
+      MONGO_URI: mongodb://mongo:27017
+      GITHUB_CLIENT_ID: Ov23li4YURt6uH6rsHOL
+      GITHUB_CLIENT_SECRET: fe15c95da6052b64f449dac3c716fd659f28e215
+      YANDEX_CLIENT_ID: e99e48c417274cd4928c888ef31439c6
+      YANDEX_CLIENT_SECRET: 468a8fcb30be408692f4579256e32d9e
+      YANDEX_REDIRECT_URI: http://localhost:8081/yandex/callback
+    # volumes:
+    #   - ./auth:/app
+    networks:
+      - app_net
+
+  mongo:
+    image: mongo:6
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    networks:
+      - app_net
+
+  nginx:
+    image: nginx:latest
+    volumes:
+      - ./telegram_module/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    ports:
+      - "80:80"  
+    networks:
+      - app_net
+
+  tg_client:
+    build: ./telegram_module/telegram_client
+    env_file:
+      - ./telegram_module/.env
+    ports:
+      - "8082:8082"
+
+  bot_logic:
+    build: ./telegram_module/bot_logic
+    ports:
+      - "8083:8083"
+    networks:
+      - app_net
+
+  tg_redis:
+    image: tg_redis:7
+    ports:
+      - "6380:6380"
+    networks:
+      - app_net
+
 
 networks:
-  core_net:
+  app_net:
 
 volumes:
   pgdata:
+  mongo-data:

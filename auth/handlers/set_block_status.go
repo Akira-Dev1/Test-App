@@ -1,0 +1,26 @@
+package handlers
+
+import (
+	"net/http"
+	"encoding/json"
+
+	"auth/user_service"
+)
+
+func SetBlockStatus (w http.ResponseWriter, r *http.Request) () {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	var req user_service.SetUserBlockStatusRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "invalid request :<", http.StatusBadRequest)
+		return
+	}
+
+	if err := user_service.SetUserBlockStatus(req.UserId, req.IsBlocked); err != nil {
+		http.Error(w, "Couldn't update user :<", http.StatusNotFound)
+		return
+	}
+	w.Write([]byte("Status successfully updated!"))
+}

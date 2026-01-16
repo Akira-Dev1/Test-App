@@ -12,7 +12,7 @@ import (
 )
 
 type UserGetBlockStatus struct {
-	IsBlocked bool `bson:"is_blocked"`
+	is_blocked bool `bson:"is_blocked"`
 }
 
 type UserGetBlockStatusRequest struct {

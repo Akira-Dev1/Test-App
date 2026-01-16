@@ -23,3 +23,5 @@ dist-ssr
 *.sln
 *.sw?
 main_module/.env
+telegram_module/.env
+auth/.env
