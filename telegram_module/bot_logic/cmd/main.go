@@ -1,11 +1,17 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
-	"log"
+
+	"bot_logic/handlers"
+	"bot_logic/storage"
 )
 
 func main(){
-	log.Println("Auth service started on: 8083")
-	log.Fatal(http.ListenAndServe(":8083", nil))
+	storage.InitRedis()
+	handlers.RegisterRoutes()
+
+	fmt.Println("Сервер запущен на :8083")
+	http.ListenAndServe(":8083", nil)
 }

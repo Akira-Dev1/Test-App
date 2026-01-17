@@ -5,7 +5,7 @@ import (
 	"log"
 )
 
-func CodeLoginBot(bot *tgbotapi.BotAPI, msg *tgbotapi.CallbackQuery) {
+func CodeLoginBot(bot *tgbotapi.BotAPI, msg *tgbotapi.CallbackQuery, status string) {
 	m := tgbotapi.NewMessage(msg.Message.Chat.ID, "CODE")
 	_, err := bot.Send(m)
 	if err != nil {

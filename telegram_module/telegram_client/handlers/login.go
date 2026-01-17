@@ -5,7 +5,7 @@ import (
 	"log"
 )
 
-func LoginBot(bot *tgbotapi.BotAPI, msg *tgbotapi.CallbackQuery) {
+func LoginBot(bot *tgbotapi.BotAPI, msg *tgbotapi.CallbackQuery, status string) {
 	m := tgbotapi.NewMessage(msg.Message.Chat.ID, "Выберите способ входа: ")
 
 	github_login := tgbotapi.NewInlineKeyboardButtonData("Github OAuth", "github_login")

@@ -25,5 +25,6 @@ func Run() {
 	bot.Debug = true
 
 	app := &App{Bot: bot}
+
 	app.Router()
 }

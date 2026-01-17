@@ -53,9 +53,8 @@ services:
       GITHUB_CLIENT_SECRET: fe15c95da6052b64f449dac3c716fd659f28e215
       YANDEX_CLIENT_ID: e99e48c417274cd4928c888ef31439c6
       YANDEX_CLIENT_SECRET: 468a8fcb30be408692f4579256e32d9e
-      YANDEX_REDIRECT_URI: http://localhost:8081/yandex/callback
-    # volumes:
-    #   - ./auth:/app
+      YANDEX_REDIRECT_URI: https://elda-unsimple-leandro.ngrok-free.dev/yandex/callback
+
     networks:
       - app_net
 
@@ -68,12 +67,14 @@ services:
     networks:
       - app_net
 
-  nginx:
+  tg_nginx:
     image: nginx:latest
     volumes:
       - ./telegram_module/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
     ports:
       - "80:80"  
+    depends_on:
+      - bot_logic
     networks:
       - app_net
 
@@ -83,6 +84,8 @@ services:
       - ./telegram_module/.env
     ports:
       - "8082:8082"
+    networks:
+      - app_net
 
   bot_logic:
     build: ./telegram_module/bot_logic
@@ -92,7 +95,8 @@ services:
       - app_net
 
   tg_redis:
-    image: tg_redis:7
+    image: redis:latest
+    command: ["redis-server", "--requirepass", "MaksimKarmyshakovGay", "--appendonly", "yes", "--port", "6380"]
     ports:
       - "6380:6380"
     networks:
