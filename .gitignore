@@ -25,3 +25,5 @@ dist-ssr
 main_module/.env
 telegram_module/.env
 auth/.env
+frontend/.env
+backend/.env
