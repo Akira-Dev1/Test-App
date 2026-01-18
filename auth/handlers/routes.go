@@ -12,6 +12,8 @@ func RegisterRoutes() {
 	http.HandleFunc("/yandex/callback", YandexCallback)
 
 
+	http.HandleFunc("/userservice", UserService)
+
 	http.HandleFunc("/userservice/get_user_list", GetUserList)
 	http.HandleFunc("/userservice/get_user_block_status", GetUserBlockStatus)
 	http.HandleFunc("/userservice/get_user_info", GetUserInfo)

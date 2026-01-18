@@ -27,7 +27,7 @@ func ExchangeGithubCodeForToken(code string) (string, error) {
 	data.Set("client_id", os.Getenv("GITHUB_CLIENT_ID"))
 	data.Set("client_secret", os.Getenv("GITHUB_CLIENT_SECRET"))
 	data.Set("code", code)
-	data.Set("redirect_uri", "http://localhost:8081/login/github/callback")
+	data.Set("redirect_uri", "https://elda-unsimple-leandro.ngrok-free.dev/login/github/callback")
 
 	req, err := http.NewRequest(
 		"POST",
@@ -71,6 +71,6 @@ func ExchangeGithubCodeForToken(code string) (string, error) {
 
 // Зачем bytes.NewBuffer?
 // HTTP-запрос в Go принимает тело как io.Reader, а не []byte.
-// bytes.Buffer:
+// bytes.Buffer: 
 // оборачивает []byte
 // делает из него поток (io.Reader)
