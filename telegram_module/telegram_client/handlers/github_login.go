@@ -34,7 +34,7 @@ func GithubLoginBot(bot *tgbotapi.BotAPI, msg *tgbotapi.CallbackQuery, status st
 		defer resp.Body.Close()
 
 		var response struct {
-			URL   string `json:"url"`
+			URL string `json:"url"`
 		}
 		
 		body, _ := io.ReadAll(resp.Body)

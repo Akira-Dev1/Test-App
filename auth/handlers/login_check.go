@@ -3,12 +3,15 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
+	
 
 	"auth/storage"
 	"auth/domain"
 )
 func LoginCheck(w http.ResponseWriter, r *http.Request) {
 	entryToken := r.URL.Query().Get("entry_token")
+		log.Printf("LoginCheck called: entry_token='%s'", entryToken)
+	
 	if entryToken == "" {
 		http.Error(w, "entry_token required", http.StatusBadRequest)
 		return

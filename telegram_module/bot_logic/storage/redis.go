@@ -72,3 +72,15 @@ func GetEntryToken(chat_id int) (string, error) {
 
 	return entry_token, nil
 }
+
+func GetRefreshToken(chat_id int) (string, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	refresh_token, err := AuthRedis.HGet(ctx, strconv.Itoa(chat_id), "refresh_token").Result()
+	if err != nil {
+		return "", err
+	}
+
+	return refresh_token, nil
+}

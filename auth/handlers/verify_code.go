@@ -75,6 +75,6 @@ func VerifyCode(w http.ResponseWriter, r *http.Request) {
 
 
 	json.NewEncoder(w).Encode(domain.VerifyCodeResponse{
-		Status: string(status) + "254",
+		Status: string(status),
 	})
 }

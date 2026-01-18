@@ -8,6 +8,7 @@ import (
 
 func main() {
 	go update.UpdateUserStatus()
+	go update.GetUserNotifications()
 
 	bot.Run()
 }
