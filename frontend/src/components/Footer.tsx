@@ -1,25 +1,14 @@
-import { useEffect, useState } from "react";
+import { Footer } from "../styles/component/Footer";
+import { Text } from "../styles/primitives/Text";
 
-const footerStyle : React.CSSProperties = {
-  position: "fixed",
-  bottom: 0,
-  left: 0,
-  height: "32px",
-  width: "100%",
-  backgroundColor: "#1e1e1e",
-
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-}
-
-const Footer : React.FC = () => {
+const FooterBar : React.FC = () => { 
   return (
-    <footer style={footerStyle}>
-      <p>Kvartirka 31</p>
-    </footer>
-
+    <>
+      <Footer>
+        <Text>Kvartirka 31</Text>
+      </Footer>
+    </>
   );
 }
 
-export default Footer;
+export default FooterBar;
