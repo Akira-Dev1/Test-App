@@ -58,6 +58,20 @@ func HandleMessage(bot *tgbotapi.BotAPI, msg *tgbotapi.Message, update *tgbotapi
             m := tgbotapi.NewMessage(msg.Chat.ID, "Сначала авторизуйтесь через /start")
             bot.Send(m)
         }
+	case "/getuserinfo":
+        if status.Status == "authorized" {
+			GetUserInfoClientHandler(bot, msg, status.Status)
+        } else {
+            m := tgbotapi.NewMessage(msg.Chat.ID, "Сначала авторизуйтесь через /start")
+            bot.Send(m)
+        }
+	case "/getuserprofile":
+        if status.Status == "authorized" {
+			GetUserProfileClientHandler(bot, msg, status.Status)
+        } else {
+            m := tgbotapi.NewMessage(msg.Chat.ID, "Сначала авторизуйтесь через /start")
+            bot.Send(m)
+        }
     default:
         if state.GetUserState(msg.Chat.ID) == "awaiting_code" {
             VerifyCode(bot, msg, status.Status)

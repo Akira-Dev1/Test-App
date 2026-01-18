@@ -27,5 +27,4 @@ func GetUserStatus(w http.ResponseWriter, r *http.Request) () {
 	status := storage.GetUserStatus(req.ChatId)
 
 	json.NewEncoder(w).Encode(GetUserStatusResponse{Status: status})
-
 }
