@@ -3,7 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
-	
+	"log"
 
 	"auth/storage"
 	"auth/domain"
