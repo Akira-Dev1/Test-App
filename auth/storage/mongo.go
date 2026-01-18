@@ -120,7 +120,6 @@ func RemoveAllRefreshTokens(userID primitive.ObjectID) error {
 }
 
 
-// GetUserCollection - геттер для коллекции
 func GetUserCollection() *mongo.Collection {
     return userCollection
 }

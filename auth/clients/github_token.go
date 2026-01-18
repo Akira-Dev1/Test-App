@@ -18,9 +18,6 @@ type githubTokenResponse struct {
 	TokenType   string `json:"token_type"`
 	Scope       string `json:"scope"`
 }
-// теги структуры соединяют JSON-поля с GO, access_token -> AccessToken
-
-
 
 func ExchangeGithubCodeForToken(code string) (string, error) {
 	data := url.Values{}
@@ -51,9 +48,6 @@ func ExchangeGithubCodeForToken(code string) (string, error) {
 	log.Println("GitHub token raw response:", string(bodyBytes))
 
 	var tokenResp githubTokenResponse
-	// if err := json.NewDecoder(resp.Body).Decode(&tokenResp); err != nil {
-	// 	return "", err
-	// }
 
 	if err := json.Unmarshal(bodyBytes, &tokenResp); err != nil {
 		return "", err

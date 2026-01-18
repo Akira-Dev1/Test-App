@@ -26,7 +26,6 @@ type YandexUserInfo struct {
 }
 
 func ExchangeYandexCodeForToken(code string) (string, error) {
-	// 1. Обмен code на access token
 	clientID := os.Getenv("YANDEX_CLIENT_ID")
 	clientSecret := os.Getenv("YANDEX_CLIENT_SECRET")
 	redirectURI := os.Getenv("YANDEX_REDIRECT_URI")
@@ -35,7 +34,6 @@ func ExchangeYandexCodeForToken(code string) (string, error) {
 		redirectURI = "http://localhost:8081/auth/yandex/callback"
 	}
 	
-	// POST запрос за токеном
 	data := url.Values{}
 	data.Set("grant_type", "authorization_code")
 	data.Set("code", code)
@@ -62,7 +60,6 @@ func ExchangeYandexCodeForToken(code string) (string, error) {
 	}
 	defer resp.Body.Close()
 	
-	// Парсим ответ с токеном
 	bodyBytes, _ := io.ReadAll(resp.Body)
 	
 	var tokenResp struct {
@@ -123,13 +120,8 @@ func getYandexUserInfo(accessToken string) (*YandexUserInfo, error) {
 }
 
 func YandexAuth(code string) (*domain.User, error) {
-	// 1. Обмениваем code на access token
     token, _ := ExchangeYandexCodeForToken(code)
-    // if err != nil {
-    //     http.Error(w, "Failed to exchange code for token", http.StatusInternalServerError)
-    //     return
-    // }
-			// 2. Получаем user info с этим токеном
+
 	userInfo, err := getYandexUserInfo(token)
 	if err != nil {
 		return nil, err
@@ -143,10 +135,8 @@ func YandexAuth(code string) (*domain.User, error) {
 			err := storage.UpdateUserYandexID(user.ID, userInfo.ID)
 			if err != nil {
 				log.Printf("Failed to update user with YandexID: %v\n", err)
-				// Продолжаем с существующим пользователем
 			}
 		} else if *user.YandexID != userInfo.ID {
-			// GithubID уже есть, но не совпадает
 			log.Printf("YandexID mismatch for user %s. Stored: %s, new: %s", 
 				user.Email, *user.YandexID, userInfo.ID)
 		}
@@ -165,7 +155,7 @@ func YandexAuth(code string) (*domain.User, error) {
     newUser, err := storage.CreateUser(domain.User{
 		Email:             userInfo.DefaultEmail,
 		YandexID:          &userInfo.ID,
-        Name:              "Anonymous" + strconv.FormatInt(14, 10),
+        Name:              "Anonymous" + strconv.FormatInt(143948752, 10),
         Roles:             []string{string(domain.RoleStudent)},
         Permissions:       permissions.ResolvePermissions([]string{string(domain.RoleStudent)}),
 		RefreshTokens:     []string{},

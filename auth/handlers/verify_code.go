@@ -31,7 +31,6 @@ func VerifyCode(w http.ResponseWriter, r *http.Request) {
         return
     }
 
-	// Парсим токен
 	claims, err := jwt.ParseRefreshToken(req.RefreshToken)
 
 	if err != nil {

@@ -51,10 +51,8 @@ func GithubAuth(code string) (*domain.User, error) {
 			err := storage.UpdateUserGithubID(user.ID, githubID)
 			if err != nil {
 				log.Printf("Failed to update user with GithubID: %v\n", err)
-				// Продолжаем с существующим пользователем
 			}
 		} else if *user.GithubID != githubID {
-			// GithubID уже есть, но не совпадает
 			log.Printf("GithubID mismatch for user %s. Stored: %s, new: %s", 
 				user.Email, *user.GithubID, githubID)
 		}

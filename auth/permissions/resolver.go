@@ -5,7 +5,6 @@ import (
 	
 )
 
-// func ResolvePermissions(roles []domain.Role) []string {
 func ResolvePermissions(roles []string) []string {
 	permSet := make(map[string]struct{})
 
@@ -23,7 +22,6 @@ func ResolvePermissions(roles []string) []string {
 	return result
 }
 
-// func permissionsByRole(role domain.Role) []string {
 func permissionsByRole(role string) []string {
 	switch role {
 		case string(domain.RoleStudent):

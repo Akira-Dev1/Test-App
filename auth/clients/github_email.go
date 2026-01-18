@@ -32,7 +32,6 @@ func GetGithubEmails(token string) ([]GithubEmail, error) {
 	req.Header.Set("Authorization", "Bearer " + token) // OAuth2 стандарт. Без этого заголовка будет 401
 	req.Header.Set("Accept", "application/json")
 
-	// Отправляем запрос
 	client := &http.Client{Timeout: 5 * time.Second}
 	resp, err := client.Do(req)
 	if err != nil {

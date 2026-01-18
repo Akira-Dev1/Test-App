@@ -50,7 +50,6 @@ func Login(w http.ResponseWriter, r *http.Request) {
 
 		githubAuthURL := "https://github.com/login/oauth/authorize?" + params.Encode()
 
-		// http.Redirect(w, r, githubAuthURL, http.StatusFound)
 		w.Header().Set("Content-Type", "text/plain")
 		w.Write([]byte(githubAuthURL))
 
@@ -75,14 +74,13 @@ func Login(w http.ResponseWriter, r *http.Request) {
 
 		params := url.Values{}
 		params.Add("client_id", clientID)
-		params.Add("response_type", "code") // ОБЯЗАТЕЛЬНО для Яндекс
+		params.Add("response_type", "code") // Обязательно для Яндекс как оказалось
 		params.Add("state", req.EntryToken)
-		params.Add("redirect_uri", os.Getenv("YANDEX_REDIRECT_URI")) // Обязательно
-		params.Add("scope", "login:email login:info")                // Яндекс scopes, а не GitHub
+		params.Add("redirect_uri", os.Getenv("YANDEX_REDIRECT_URI")) 
+		params.Add("scope", "login:email login:info") 
 
 		yandexAuthURL := "https://oauth.yandex.ru/authorize?" + params.Encode()
 
-		// http.Redirect(w, r, yandexAuthURL, http.StatusFound)
 		w.Header().Set("Content-Type", "text/plain")
 		w.Write([]byte(yandexAuthURL))
 
