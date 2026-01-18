@@ -1,18 +1,17 @@
 import { tryRefresh } from "./refresh";
 import { createApiError } from "./errors";
-import { redirectToRoot } from "../auth/redirect";
 
-const API_URL = "http://localhost:8081";
+const API_URL = import.meta.env.VITE_API_URL;
 
 type FetchOptions = RequestInit & {
   retry?: boolean;
 };
 
 export async function fetchClient<T>(
-  url: string,
+  path: string,
   options: FetchOptions = {}
 ): Promise<T> {
-  const response = await fetch(API_URL + url, {
+  const response = await fetch(`${API_URL}${path}`, {
     ...options,
     credentials: "include",
     headers: {
@@ -21,6 +20,8 @@ export async function fetchClient<T>(
     },
   });
   
+  console.log("HTTP status:", response.status);
+
   if (response.ok) {
     return response.json();
   }
@@ -29,10 +30,9 @@ export async function fetchClient<T>(
     const refreshed = await tryRefresh();
 
     if (refreshed) {
-      return fetchClient<T>(url, { ...options, retry: true });
+      return fetchClient<T>(path, { ...options, retry: true });
     }
 
-    redirectToRoot();
     throw createApiError(response);
   }
 

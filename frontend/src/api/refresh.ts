@@ -1,4 +1,4 @@
-const API_URL = "http://localhost:8081";
+const API_URL = import.meta.env.VITE_API_URL;
 
 export async function tryRefresh(): Promise<boolean> {
   const res = await fetch(`${API_URL}/auth/refresh`, {

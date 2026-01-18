@@ -7,7 +7,7 @@ import Loader from "../components/Loader";
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [state, setState] = useState<AuthState>("unknown");
-
+  
   const refreshAuth = async () => {
     try {
       const data = await fetchAuthStatus();
@@ -17,13 +17,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setState("need_verify");
           redirectToVerify();
           break;
+          
         case "access_denied":
           setState("anonymous");
           redirectToRoot();
           break;
+
         case "approved":
           setState("authorized");
           break;
+
         default:
           setState("unknown");
       }
@@ -31,7 +34,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const err = e as { statusCode?: number };
       if (err.statusCode === 401) {
         setState("anonymous");
-        redirectToRoot();
       }
     }
   };
