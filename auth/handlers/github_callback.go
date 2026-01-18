@@ -41,6 +41,7 @@ func GithubCallback(w http.ResponseWriter, r *http.Request) {
     accessToken, err := jwt.GenerateAccessToken(
         user.ID.Hex(),
         user.Permissions,
+        user.IsBlocked,
     )
     if err != nil {
         http.Error(w, "access token error", http.StatusInternalServerError)

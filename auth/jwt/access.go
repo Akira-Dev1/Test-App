@@ -8,10 +8,11 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-func GenerateAccessToken(userID string, permissions []string) (string, error) {
+func GenerateAccessToken(userID string, permissions []string, is_blocked bool) (string, error) {
 	claims := AccessClaims{
 		UserID:      userID,
 		Permissions: permissions,
+		Blocked: is_blocked,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(1 * time.Minute)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),

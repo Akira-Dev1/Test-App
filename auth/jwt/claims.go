@@ -5,6 +5,7 @@ import "github.com/golang-jwt/jwt/v5"
 type AccessClaims struct {
 	UserID      string   `json:"user_id"`
 	Permissions []string `json:"permissions"`
+	Blocked     bool     `json:"blocked"`
 	jwt.RegisteredClaims
 }
 

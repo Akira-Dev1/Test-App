@@ -66,6 +66,7 @@ func Refresh(w http.ResponseWriter, r *http.Request) {
 	accessToken, err := jwt.GenerateAccessToken(
 		user.ID.Hex(),
 		perms,
+		user.IsBlocked,
 	)
 	if err != nil {
 		http.Error(w, "failed to generate access", http.StatusInternalServerError)
