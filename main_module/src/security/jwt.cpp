@@ -36,9 +36,6 @@ UserContext parseAndVerifyJWT(const crow::request& req) {
         for (auto& p : decoded.get_payload_claim("permissions").as_array()) {
             ctx.permissions.insert(p.get<std::string>());
         }
-        for (auto& r : decoded.get_payload_claim("roles").as_array()) {
-            ctx.roles.insert(r.get<std::string>());
-        }
 
         return ctx;
     } catch (const jwt::error::token_verification_exception& e) {
