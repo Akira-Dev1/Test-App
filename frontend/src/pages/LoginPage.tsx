@@ -1,5 +1,13 @@
-import { Wrapper } from "../components/Wrapper";
-import { Title } from "../components/Title";
+import styled from "styled-components";
+import { Card } from "../styles/component/Card";
+import { Center } from "../styles/layout/Center";
+import { Button } from "../styles/primitives/Button";
+import { Stack } from "../styles/primitives/Stack";
+import { Text } from '../styles/primitives/Text';
+
+const CardLogin = styled(Card)`
+  width: 40%;
+`
 
 const LoginPage = () => {
   const loginGithub = () => {
@@ -15,21 +23,25 @@ const LoginPage = () => {
   };
 
   return (
-    <Wrapper>
-      <Title>Log in</Title>
+    <Center>
+      <CardLogin>
+        <Stack gap={16}>
+          <Text variant="h1">Log in</Text>
 
-      <button onClick={loginGithub}>
-        GitHub
-      </button>
+          <Button onClick={loginGithub}>
+            GitHub
+          </Button>
 
-      <button onClick={loginYandex}>
-        Yandex
-      </button>
+          <Button onClick={loginYandex}>
+            Yandex
+          </Button>
 
-      <button onClick={loginByCode}>
-        Code
-      </button>
-    </Wrapper>
+          <Button onClick={loginByCode}>
+            Code
+          </Button>
+        </Stack>
+      </CardLogin>
+    </Center>
   );
 };
 

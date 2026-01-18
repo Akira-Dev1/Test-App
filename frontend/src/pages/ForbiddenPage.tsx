@@ -1,25 +1,30 @@
 import { Link } from "react-router-dom";
-import { Wrapper } from "../components/Wrapper";
-import { Title } from "../components/Title";
-import { Paragraph } from "../components/Paragraph";
+import { Text } from "../styles/primitives/Text";
+import { Card } from "../styles/component/Card";
+import { Center } from "../styles/layout/Center";
+import { Stack } from "../styles/primitives/Stack";
 
 const ForbiddenPage = () => {
   return (
-    <Wrapper>
-      <Title>403 — No access</Title>
+    <Center>
+      <Card>
+        <Stack gap={16}>
+          <Text variant="h1">403 — No access</Text>
 
-      <Paragraph>
-        You don't have the rights to perform this action.
-      </Paragraph>
+          <Text>
+            You don't have the rights to perform this action.
+          </Text>
 
-      <Paragraph>
-        If you think that this is an error, please contact the administrator.
-      </Paragraph>
+          <Text>
+            If you think that this is an error, please contact the administrator.
+          </Text>
 
-      <Link to="/">
-        Go back to the Home page
-      </Link>
-    </Wrapper>
+          <Link to="/">
+            Go back to the Home page
+          </Link>
+        </Stack>
+      </Card>
+    </Center>
   );
 };
 

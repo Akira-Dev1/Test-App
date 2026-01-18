@@ -1,20 +1,16 @@
-import Header from "../components/Header";
-import Footer from "../components/Footer";
+import HeaderBar from "../components/Header";
+import FooterBar from "../components/Footer";
+import { Page } from "../styles/layout/Page"
 import { Outlet } from "react-router-dom";
-
-const mainStyle : React.CSSProperties = {
-  paddingTop: "56px",
-  paddingBottom: "32px",
-};
 
 const MainLayout = () => {
   return (
     <>
-      <Header />
-      <main style={mainStyle}>
+      <HeaderBar />
+      <Page>
         <Outlet />
-      </main>
-      <Footer/>
+      </Page>
+      <FooterBar/>
     </>
   );
 };

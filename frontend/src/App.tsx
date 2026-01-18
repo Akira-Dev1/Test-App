@@ -14,7 +14,15 @@ import PublicRoute from "./router/PublicRoute";
 function App() {
   return (
     <Routes>
-      <Route path="/" element={<HomePage />} />
+      <Route
+        path="/"
+        element={
+          <PublicRoute>
+            <HomePage />
+          </PublicRoute>
+        }
+      />
+
       <Route
         path="/login" 
         element={
