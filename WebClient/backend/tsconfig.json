@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "lib": ["ES2021", "DOM"],
     "target": "ES2021",
     "module": "CommonJS",
     "outDir": "dist",

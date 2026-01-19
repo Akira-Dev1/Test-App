@@ -7,7 +7,7 @@ export type AuthState =
 
 // Ответ сервиса авторизации при проверках
 export type AuthStatusResponse = {
-	status: "pending" | "access_denied" | "approved";
+	status: "pending" | "access_denied" | "approved" | "anonymous";
 };
 
 // Ответ при успешной верификации

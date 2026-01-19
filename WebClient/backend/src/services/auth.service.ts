@@ -1,5 +1,3 @@
-import fetch from "node-fetch";
-
 const AUTH_URL = process.env.AUTH_SERVICE_URL || "http://auth:8081";
 
 type AuthVerifyResponse =
