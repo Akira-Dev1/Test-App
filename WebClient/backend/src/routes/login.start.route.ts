@@ -7,6 +7,10 @@ const router = Router();
 
 router.get("/login", async (req: Request, res: Response) => {
   const type = req.query.type as string | undefined;
+  
+  if (!type) {
+  return res.sendStatus(200); // SPA через nginx
+  }
 
   // Проверка типа логина
   if (!type || !["github", "yandex", "code"].includes(type)) {
@@ -23,6 +27,7 @@ router.get("/login", async (req: Request, res: Response) => {
     res.cookie(SESSION_COOKIE_NAME, sessionId, {
       httpOnly: true,
       sameSite: "lax",
+      path: "/", 
     });
   }
 

@@ -15,9 +15,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       switch (data.status) {
         case "pending":
           setState("need_verify");
-          redirectToVerify();
+          if (window.location.pathname !== "/verify") {
+            redirectToVerify();
+          }
           break;
-          
         case "access_denied":
           setState("anonymous");
           redirectToRoot();
@@ -25,6 +26,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         case "approved":
           setState("authorized");
+          break;
+
+        case "anonymous":
+          setState("anonymous");
           break;
 
         default:
