@@ -42,7 +42,10 @@ router.get("/login", async (req: Request, res: Response) => {
    */
 
   if (type === "code") {
-    console.log("Login code:", entryToken);
+    console.log("Login code:", {
+      sessionId,
+      entryToken,
+    });
   }
 
   // Redirect пользователя

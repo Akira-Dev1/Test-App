@@ -4,6 +4,7 @@ import { connectRedis } from "./redis/redis.client";
 import { sessionMiddleware } from "./middlewares/session.middleware";
 import loginCheckRoute from "./routes/login.check.route";
 import loginStartRoute from "./routes/login.start.route";
+import loginVerifyRoute from "./routes/login.verify.route";
 
 async function bootstrap() {
   await connectRedis();
@@ -19,7 +20,8 @@ async function bootstrap() {
   app.use(loginCheckRoute);
   app.use(loginStartRoute);
 
-
+  app.use(loginVerifyRoute);
+  
   app.get("/health", (_, res) => {
     res.send("OK");
   });
