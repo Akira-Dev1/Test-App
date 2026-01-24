@@ -1,5 +1,6 @@
 package domain
 
 type Repository interface {
-	GetAll() ([]Course, error)
+	GetAll() 	([]map[string]any, error)
+	GetByID(id string) 	(map[string]any, error)
 }

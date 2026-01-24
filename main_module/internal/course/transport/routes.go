@@ -12,5 +12,11 @@ func RegisterCourseRoutes(mux *http.ServeMux, h *Handler) {
 		authTransport.AuthMiddleware(
 			http.HandlerFunc(h.GetCourses),
 		),
-	)
+	) // Получение списка курсов
+	mux.Handle(
+		"GET /courses/{id}",
+		authTransport.AuthMiddleware(
+			http.HandlerFunc(h.GetCourseByID),
+		),
+	) // Получение курса по айди
 }
