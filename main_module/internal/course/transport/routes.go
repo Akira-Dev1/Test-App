@@ -7,34 +7,29 @@ import (
 )
 
 func RegisterCourseRoutes(mux *http.ServeMux, h *Handler) {
-	mux.Handle(
-		"GET /courses",
-		authTransport.AuthMiddleware(
-			http.HandlerFunc(h.GetCourses),
-		),
-	) // Получение списка курсов
-	mux.Handle(
-		"GET /courses/{id}",
-		authTransport.AuthMiddleware(
-			http.HandlerFunc(h.GetCourseByID),
-		),
-	) // Получение курса по айди
-	mux.Handle(
-		"PATCH /courses/{id}",
-		authTransport.AuthMiddleware(
-			http.HandlerFunc(h.UpdateCourse),
-		),
-	) // Изменение курса
-	mux.Handle(
-		"POST /courses",
-		authTransport.AuthMiddleware(
-			http.HandlerFunc(h.CreateCourse),
-		),
-	) // Создание курса
-	mux.Handle(
-		"DELETE /courses/{id}",
-		authTransport.AuthMiddleware(
-			http.HandlerFunc(h.DeleteCourse),
-		),
-	) // Удаление курса
+	// Course
+	mux.Handle("GET /courses", 
+		authTransport.AuthMiddleware(http.HandlerFunc(h.GetCourses))) 			// Получение списка курсов
+	mux.Handle("GET /courses/{courseID}", 
+		authTransport.AuthMiddleware(http.HandlerFunc(h.GetCourseByID))) 		// Получение информации о курсе (Название, Описание, ID преподавателя)
+	mux.Handle("PATCH /courses/{courseID}", 
+		authTransport.AuthMiddleware(http.HandlerFunc(h.UpdateCourse))) 		// Изменение курса
+	mux.Handle("POST /courses", 
+		authTransport.AuthMiddleware(http.HandlerFunc(h.CreateCourse))) 		// Создание курса
+	mux.Handle("DELETE /courses/{courseID}", 
+		authTransport.AuthMiddleware(http.HandlerFunc(h.DeleteCourse))) 		// Удаление курса
+
+	// Test
+	mux.Handle("GET /courses/{courseID}/tests", 
+		authTransport.AuthMiddleware(http.HandlerFunc(h.GetCourseTests)))		// Получение информации о курсе (Список тестов)
+	mux.Handle("GET /courses/{courseID}/tests/{testID}/status", 
+		authTransport.AuthMiddleware(http.HandlerFunc(h.GetTestStatus)))		// Получение информации о тесте (Активный тест или нет)
+	mux.Handle("PATCH /courses/{courseID}/tests/{testID}/activation", 
+		authTransport.AuthMiddleware(http.HandlerFunc(h.UpdateTestStatus)))		// Изменение теста (Активировать/Деактивировать тест)
+	mux.Handle("POST /courses/{courseID}/tests",
+		authTransport.AuthMiddleware(http.HandlerFunc(h.CreateTest)))			// Создание теста
+	mux.Handle("DELETE /courses/{courseID}/tests/{testID}",
+		authTransport.AuthMiddleware(http.HandlerFunc(h.DeleteTest)))			// Удаление теста
+
+	// Enrollment
 }

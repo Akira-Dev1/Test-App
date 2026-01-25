@@ -4,16 +4,11 @@ import (
 	"errors"
 
 	authDomain "main_module/internal/auth/domain"
+	courseDomain "main_module/internal/course/domain"
 )
 
-//GetDisciplineByID (Посмотреть информацию — Default Allow)
-//CreateDiscipline (Создать — Permission: course:add)
-//UpdateDiscipline (Изменить информацию — Owner or course:info:write)
-//DeleteDiscipline (Удалить — Owner or course:del)
-
-
 // Получить список курсов
-func (s *CourseService) GetCourses(user *authDomain.UserContext) ([]map[string]any, error) {
+func (s *CourseService) GetCourses(user *authDomain.UserContext) ([]courseDomain.Course, error) {
 	rule := AccessRule{
 		DefaultAllow: true,
 	}
@@ -26,13 +21,13 @@ func (s *CourseService) GetCourses(user *authDomain.UserContext) ([]map[string]a
 }
 
 // Получить курс по айди
-func (s *CourseService) GetCourseByID(user *authDomain.UserContext, id string) (map[string]any, error) {
+func (s *CourseService) GetCourseByID(user *authDomain.UserContext, id string) (courseDomain.Course, error) {
 	rule := AccessRule{
 		DefaultAllow: true,
 	}
 
 	if !CheckAccess(user, rule, "") {
-		return nil, errors.New("forbidden")
+		return courseDomain.Course{}, errors.New("forbidden")
 	}
 
 	return s.Repo.GetByID(id)
@@ -51,7 +46,7 @@ func (s *CourseService) UpdateCourse(user *authDomain.UserContext, id string, ti
 		return errors.New("course not found")
 	}
 
-	if !CheckAccess(user, rule, course["author_id"].(string)) {
+	if !CheckAccess(user, rule, *course.AuthorID) {
 		return errors.New("forbidden")
 	}
 
@@ -59,14 +54,14 @@ func (s *CourseService) UpdateCourse(user *authDomain.UserContext, id string, ti
 }
 
 // Создать курс
-func (s *CourseService) CreateCourse(user *authDomain.UserContext, title string, description string) (map[string]string, error) {
+func (s *CourseService) CreateCourse(user *authDomain.UserContext, title string, description string) (courseDomain.Course, error) {
 	rule := AccessRule{
 		Permission: "course:add",
 		DefaultAllow: false,
 	}
 
 	if !CheckAccess(user, rule, "") {
-		return nil, errors.New("forbidden")
+		return courseDomain.Course{}, errors.New("forbidden")
 	}
 
 	return s.Repo.CreateNew(user, title, description)
@@ -85,7 +80,7 @@ func (s *CourseService) DeleteCourse(user *authDomain.UserContext, id string) er
 		return errors.New("course not found")
 	}
 
-	if !CheckAccess(user, rule, course["author_id"].(string)) {
+	if !CheckAccess(user, rule, *course.AuthorID) {
 		return errors.New("forbidden")
 	}
 

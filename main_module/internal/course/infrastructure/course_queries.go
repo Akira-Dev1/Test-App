@@ -7,11 +7,8 @@ import (
 	authDomain 		"main_module/internal/auth/domain"
 )
 
-//Create(course domain.Course)
-//Delete(id string) — (установка флага is_deleted = true)
-
 // Получить список курсов
-func (r *PostgresRepo) GetAll() ([]map[string]any, error) {
+func (r *PostgresRepo) GetAll() ([]courseDomain.Course, error) {
 	rows, err := r.DB.Query(`
 		SELECT id, title, description 
 		FROM courses 
@@ -22,25 +19,19 @@ func (r *PostgresRepo) GetAll() ([]map[string]any, error) {
 	}
 	defer rows.Close()
 
-	var dataCourses []map[string]any
+	var courses []courseDomain.Course
 	for rows.Next() {
 		var c courseDomain.Course
 		rows.Scan(&c.ID, &c.Title, &c.Description)
 
-		dataC := map[string]any {
-			"id": 			c.ID,
-			"title": 		c.Title,
-			"description": 	c.Description,
-		}
-
-		dataCourses = append(dataCourses, dataC)
+		courses = append(courses, c)
 	}
 
-	return dataCourses, nil
+	return courses, nil
 }
 
 // Получить курс по айди
-func (r *PostgresRepo) GetByID(id string) (map[string]any, error) {
+func (r *PostgresRepo) GetByID(id string) (courseDomain.Course, error) {
 	var course courseDomain.Course
 	
 	err := r.DB.QueryRow(`
@@ -52,17 +43,12 @@ func (r *PostgresRepo) GetByID(id string) (map[string]any, error) {
 
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, errors.New("course not found")
+			return courseDomain.Course{}, errors.New("course not found")
 		}
-		return nil, err
+		return courseDomain.Course{}, err
 	}
 
-	dataCourse := map[string]any {
-		"title": 	course.Title,
-		"description": 	course.Description,
-		"author_id": 	course.AuthorID,
-	}
-	return dataCourse, nil
+	return course, nil
 }
 
 // Изменить курс
@@ -95,8 +81,8 @@ func (r *PostgresRepo) UpdateByID(id string, title any, description any) error {
 }
 
 // Создать курс
-func (r *PostgresRepo) CreateNew(user *authDomain.UserContext, title string, description string) (map[string]string, error) {
-	var id string
+func (r *PostgresRepo) CreateNew(user *authDomain.UserContext, title string, description string) (courseDomain.Course, error) {
+	var course courseDomain.Course
 	err := r.DB.QueryRow(`
 		INSERT INTO courses(title, description, author_id) 
 		VALUES ($1, $2, $3) 
@@ -104,13 +90,13 @@ func (r *PostgresRepo) CreateNew(user *authDomain.UserContext, title string, des
 		title,
 		description,
 		user.UserID,
-	).Scan(&id)
+	).Scan(&course.ID)
 
 	if err != nil {
-		return nil, err
+		return courseDomain.Course{}, err
 	}
 
-	return map[string]string{"id": id}, err
+	return course, err
 }
 
 // Удалить курс

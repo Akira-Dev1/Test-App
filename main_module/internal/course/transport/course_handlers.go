@@ -33,12 +33,12 @@ func (h *Handler) GetCourseByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id := r.PathValue("id")
-	if id == "" {
-		http.Error(w, "missing id", http.StatusBadRequest)
+	courseID := r.PathValue("courseID")
+	if courseID == "" {
+		http.Error(w, "missing courseID", http.StatusBadRequest)
 	}
 
-	course, err := h.CourseService.GetCourseByID(&user, id)
+	course, err := h.CourseService.GetCourseByID(&user, courseID)
 	if err != nil {
 		http.Error(w, err.Error(), 403)
 		return
@@ -56,9 +56,9 @@ func (h *Handler) UpdateCourse(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id := r.PathValue("id")
-	if id == "" {
-		http.Error(w, "missing id", http.StatusBadRequest)
+	courseID := r.PathValue("courseID")
+	if courseID == "" {
+		http.Error(w, "missing courseID", http.StatusBadRequest)
 	}
 
 	var data map[string]any
@@ -76,7 +76,7 @@ func (h *Handler) UpdateCourse(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.CourseService.UpdateCourse(&user, id, title, description); err != nil {
+	if err := h.CourseService.UpdateCourse(&user, courseID, title, description); err != nil {
 		http.Error(w, err.Error(), 403)
 		return
 	}
@@ -123,12 +123,12 @@ func (h *Handler) DeleteCourse(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id := r.PathValue("id")
-	if id == "" {
-		http.Error(w, "missing id", http.StatusBadRequest)
+	courseID := r.PathValue("courseID")
+	if courseID == "" {
+		http.Error(w, "missing courseID", http.StatusBadRequest)
 	}
 
-	if err := h.CourseService.DeleteCourse(&user, id); err != nil {
+	if err := h.CourseService.DeleteCourse(&user, courseID); err != nil {
 		http.Error(w, err.Error(), 403)
 		return
 	}

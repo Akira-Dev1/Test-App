@@ -35,8 +35,7 @@ CREATE TABLE IF NOT EXISTS tests (
     title                   TEXT NOT NULL,
     question_ids            INTEGER[] DEFAULT '{}',
     is_active               BOOLEAN DEFAULT FALSE,
-    is_deleted              BOOLEAN DEFAULT FALSE,
-    author_id               TEXT NOT NULL
+    is_deleted              BOOLEAN DEFAULT FALSE
 );
 
 
