@@ -3,14 +3,14 @@ package infrastructure
 import (
 	"database/sql"
 	"errors"
-	"main_module/internal/course/domain"
+	courseDomain 	"main_module/internal/course/domain"
+	authDomain 		"main_module/internal/auth/domain"
 )
 
-//GetByID(id string)
 //Create(course domain.Course)
-//Update(course domain.Course)
 //Delete(id string) — (установка флага is_deleted = true)
 
+// Получить список курсов
 func (r *PostgresRepo) GetAll() ([]map[string]any, error) {
 	rows, err := r.DB.Query(`
 		SELECT id, title, description 
@@ -24,7 +24,7 @@ func (r *PostgresRepo) GetAll() ([]map[string]any, error) {
 
 	var dataCourses []map[string]any
 	for rows.Next() {
-		var c domain.Course
+		var c courseDomain.Course
 		rows.Scan(&c.ID, &c.Title, &c.Description)
 
 		dataC := map[string]any {
@@ -39,8 +39,9 @@ func (r *PostgresRepo) GetAll() ([]map[string]any, error) {
 	return dataCourses, nil
 }
 
+// Получить курс по айди
 func (r *PostgresRepo) GetByID(id string) (map[string]any, error) {
-	var course domain.Course
+	var course courseDomain.Course
 	
 	err := r.DB.QueryRow(`
 		SELECT title, description, author_id
@@ -62,4 +63,77 @@ func (r *PostgresRepo) GetByID(id string) (map[string]any, error) {
 		"author_id": 	course.AuthorID,
 	}
 	return dataCourse, nil
+}
+
+// Изменить курс
+func (r *PostgresRepo) UpdateByID(id string, title any, description any) error {
+	res, err := r.DB.Exec(`
+		UPDATE courses
+		SET 
+			title = COALESCE($1, title), 
+			description = COALESCE($2, description)
+		WHERE id = $3 AND is_deleted = false`,
+		title,
+		description,
+		id,
+	)
+
+	if err != nil {
+		return err
+	}
+
+	count, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if count == 0 {
+		return errors.New("course not found")
+	}
+
+	return nil
+}
+
+// Создать курс
+func (r *PostgresRepo) CreateNew(user *authDomain.UserContext, title string, description string) (map[string]string, error) {
+	var id string
+	err := r.DB.QueryRow(`
+		INSERT INTO courses(title, description, author_id) 
+		VALUES ($1, $2, $3) 
+		RETURNING id`,
+		title,
+		description,
+		user.UserID,
+	).Scan(&id)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return map[string]string{"id": id}, err
+}
+
+// Удалить курс
+func (r *PostgresRepo) DeleteByID(id string) error {
+	res, err := r.DB.Exec(`
+		UPDATE courses 
+		SET is_deleted = true 
+		WHERE id = $1`,
+		id,
+	)
+
+	if err != nil {
+		return err
+	}
+
+	count, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if count == 0 {
+		return errors.New("course not found")
+	}
+
+	return nil
 }
