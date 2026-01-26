@@ -17,12 +17,16 @@ type AccessRule struct {
 	DefaultAllow		bool	 // по умолчанию
 }
 
-func CheckAccess(user *authDomain.UserContext, rule AccessRule, ownerID string) bool {
+func CheckAccess(user *authDomain.UserContext, rule AccessRule, ownerID string, targetUserID string) bool {
 	if user.Blocked {
 		return false
 	}
 
 	if rule.Permission != "" && slices.Contains(user.Permissions, rule.Permission) {
+		return true
+	}
+
+	if rule.AllowSelf && user.UserID == targetUserID {
 		return true
 	}
 

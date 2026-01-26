@@ -21,7 +21,7 @@ func (s *CourseService) GetCourseTests(user *authDomain.UserContext, courseID st
 		return nil, errors.New("course not found")
 	}
 
-	if !CheckAccess(user, rule, *course.AuthorID) {
+	if !CheckAccess(user, rule, *course.AuthorID, "") {
 		return nil, errors.New("forbidden")
 	}
 
@@ -42,7 +42,7 @@ func (s *CourseService) GetTestStatus(user *authDomain.UserContext, courseID str
 		return courseDomain.Test{}, errors.New("course not found")
 	}
 
-	if !CheckAccess(user, rule, *course.AuthorID) {
+	if !CheckAccess(user, rule, *course.AuthorID, "") {
 		return courseDomain.Test{}, errors.New("forbidden")
 	}
 
@@ -62,7 +62,7 @@ func (s *CourseService) UpdateTestStatus(user *authDomain.UserContext, courseID 
 		return errors.New("course not found")
 	}
 
-	if !CheckAccess(user, rule, *course.AuthorID) {
+	if !CheckAccess(user, rule, *course.AuthorID, "") {
 		return errors.New("forbidden")
 	}
 
@@ -82,7 +82,7 @@ func (s *CourseService) CreateTest(user *authDomain.UserContext, courseID string
 		return courseDomain.Test{}, errors.New("course not found")
 	}
 
-	if !CheckAccess(user, rule, *course.AuthorID) {
+	if !CheckAccess(user, rule, *course.AuthorID, "") {
 		return courseDomain.Test{}, errors.New("forbidden")
 	}
 
@@ -102,7 +102,7 @@ func (s *CourseService) DeleteTest(user *authDomain.UserContext, courseID string
 		return errors.New("course not found")
 	}
 
-	if !CheckAccess(user, rule, *course.AuthorID) {
+	if !CheckAccess(user, rule, *course.AuthorID, "") {
 		return errors.New("forbidden")
 	}
 

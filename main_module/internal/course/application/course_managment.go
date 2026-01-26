@@ -13,7 +13,7 @@ func (s *CourseService) GetCourses(user *authDomain.UserContext) ([]courseDomain
 		DefaultAllow: true,
 	}
 
-	if !CheckAccess(user, rule, "") {
+	if !CheckAccess(user, rule, "", "") {
 		return nil, errors.New("forbidden")
 	}
 
@@ -26,7 +26,7 @@ func (s *CourseService) GetCourseByID(user *authDomain.UserContext, id string) (
 		DefaultAllow: true,
 	}
 
-	if !CheckAccess(user, rule, "") {
+	if !CheckAccess(user, rule, "", "") {
 		return courseDomain.Course{}, errors.New("forbidden")
 	}
 
@@ -46,7 +46,7 @@ func (s *CourseService) UpdateCourse(user *authDomain.UserContext, id string, ti
 		return errors.New("course not found")
 	}
 
-	if !CheckAccess(user, rule, *course.AuthorID) {
+	if !CheckAccess(user, rule, *course.AuthorID, "") {
 		return errors.New("forbidden")
 	}
 
@@ -60,7 +60,7 @@ func (s *CourseService) CreateCourse(user *authDomain.UserContext, title string,
 		DefaultAllow: false,
 	}
 
-	if !CheckAccess(user, rule, "") {
+	if !CheckAccess(user, rule, "", "") {
 		return courseDomain.Course{}, errors.New("forbidden")
 	}
 
@@ -80,7 +80,7 @@ func (s *CourseService) DeleteCourse(user *authDomain.UserContext, id string) er
 		return errors.New("course not found")
 	}
 
-	if !CheckAccess(user, rule, *course.AuthorID) {
+	if !CheckAccess(user, rule, *course.AuthorID, "") {
 		return errors.New("forbidden")
 	}
 
