@@ -5,12 +5,9 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	_ "github.com/lib/pq"
 
-	"net/http"
 	"log"
 
-	courseApp 		"main_module/internal/course/application"
-	courseInfra 	"main_module/internal/course/infrastructure"
-	courseTransport "main_module/internal/course/transport"
+	"main_module/internal/app"
 )
 
 
@@ -23,13 +20,6 @@ func main() {
 		log.Fatal(err)
 	}
 
-	courseRepo := courseInfra.NewCourseRepository(db)
-	courseService := courseApp.NewCourseService(courseRepo)
-	courseHandler := courseTransport.NewCourseHandler(courseService)
-
-	mux := http.NewServeMux()
-	courseTransport.RegisterCourseRoutes(mux, courseHandler)
-
-	log.Println("started :18080")
-	http.ListenAndServe(":18080", mux)
+	app := app.NewApp(db)
+	app.Run()
 }

@@ -38,8 +38,4 @@ func RegisterCourseRoutes(mux *http.ServeMux, h *Handler) {
 		authTransport.AuthMiddleware(http.HandlerFunc(h.EnrollUser)))			// Запись пользователя на курс
 	mux.Handle("DELETE /courses/{courseID}/leave",	
 		authTransport.AuthMiddleware(http.HandlerFunc(h.UnenrollUser)))			// Отчисление пользователя с курса
-	//GetStudents(courseID string)
-//AddUserToCourse(courseID, userID string)
-//RemoveUserFromCourse(courseID, userID string)
-//IsEnrolled(courseID, userID string) — (очень полезный метод для проверки прав в слое application)
 }
