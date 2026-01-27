@@ -18,7 +18,7 @@ func RegisterCourseRoutes(mux *http.ServeMux, h *Handler) {
 		authTransport.AuthMiddleware(http.HandlerFunc(h.CreateCourse))) 		// Создание курса
 	mux.Handle("DELETE /courses/{courseID}", 
 		authTransport.AuthMiddleware(http.HandlerFunc(h.DeleteCourse))) 		// Удаление курса
-
+																				
 	// Test
 	mux.Handle("GET /courses/{courseID}/tests", 
 		authTransport.AuthMiddleware(http.HandlerFunc(h.GetCourseTests)))		// Получение информации о курсе (Список тестов)

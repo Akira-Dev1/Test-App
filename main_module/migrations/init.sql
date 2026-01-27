@@ -47,10 +47,28 @@ CREATE TABLE IF NOT EXISTS test_attempts (
     questions_snapshot      JSONB NOT NULL,
     user_answers            JSONB NOT NULL,
     status                  TEXT DEFAULT 'in_progress',
-    score                   DOUBLE PRECISION DEFAULT 0.0,
+    score                   INTEGER DEFAULT 0,
+    max_score               INTEGER DEFAULT 0,
     created_at              TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(user_id, test_id)
 );
+
+CREATE OR REPLACE FUNCTION calc_max_score()
+RETURNS TRIGGER AS $$
+BEGIN
+    SELECT coalesce(array_length(question_ids, 1), 0) INTO NEW.max_score
+    FROM tests
+    WHERE id = NEW.test_id;
+    
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_auto_max_score
+BEFORE INSERT ON test_attempts
+FOR EACH ROW
+EXECUTE FUNCTION calc_max_score();
+
 
 
 -- Уведомления
