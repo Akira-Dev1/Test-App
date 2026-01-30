@@ -117,7 +117,7 @@ services:
 
   tg_redis:
     image: redis:latest
-    command: ["redis-server", "--requirepass", "MaksimKarmyshakovGay", "--appendonly", "yes", "--port", "6380"]
+    command: ["redis-server", "--requirepass", "--appendonly", "yes", "--port", "6380"]
     ports:
       - "6380:6380"
     networks:

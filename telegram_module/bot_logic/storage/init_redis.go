@@ -15,7 +15,7 @@ var (
 func InitRedis() error {    
     AuthRedis = redis.NewClient(&redis.Options{
         Addr:     "tg_redis:6380",
-        Password: "MaksimKarmyshakovGay",
+        Password: "GayPosisko&Osman",
         DB:       0,
     })
     
