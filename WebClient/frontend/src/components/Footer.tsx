@@ -3,11 +3,9 @@ import { Text } from "../styles/primitives/Text";
 
 const FooterBar : React.FC = () => { 
   return (
-    <>
-      <Footer>
-        <Text>Kvartirka 31</Text>
-      </Footer>
-    </>
+    <Footer>
+      <Text>Kvartirka 31</Text>
+    </Footer>
   );
 }
 

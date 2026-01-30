@@ -7,9 +7,9 @@ const MainLayout = () => {
   return (
     <>
       <HeaderBar />
-      <Page>
-        <Outlet />
-      </Page>
+        <Page>
+          <Outlet />
+        </Page>
       <FooterBar/>
     </>
   );

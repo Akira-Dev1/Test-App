@@ -19,6 +19,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             redirectToVerify();
           }
           break;
+
         case "access_denied":
           setState("anonymous");
           redirectToRoot();
@@ -37,6 +38,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     } catch (e) {
       const err = e as { statusCode?: number };
+      
       if (err.statusCode === 401) {
         setState("anonymous");
       }

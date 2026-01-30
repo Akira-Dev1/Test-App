@@ -1,13 +1,8 @@
-import styled from "styled-components";
 import { Card } from "../styles/component/Card";
 import { Center } from "../styles/layout/Center";
 import { Button } from "../styles/primitives/Button";
 import { Stack } from "../styles/primitives/Stack";
 import { Text } from '../styles/primitives/Text';
-
-const CardLogin = styled(Card)`
-  width: 40%;
-`
 
 const LoginPage = () => {
   const loginGithub = () => {
@@ -24,23 +19,23 @@ const LoginPage = () => {
 
   return (
     <Center>
-      <CardLogin>
+      <Card>
         <Stack gap={16}>
           <Text variant="h1">Log in</Text>
 
           <Button onClick={loginGithub}>
-            GitHub
+            <Text variant="h2">GitHub</Text>
           </Button>
 
           <Button onClick={loginYandex}>
-            Yandex
+            <Text variant="h2">Yandex</Text>
           </Button>
 
           <Button onClick={loginByCode}>
-            Code
+            <Text variant="h2">Code</Text>
           </Button>
         </Stack>
-      </CardLogin>
+      </Card>
     </Center>
   );
 };
