@@ -8,16 +8,16 @@ import (
 
 
 type AccessRule struct {
-	Permission		string 	// разрешение
+	Permission					string 	// разрешение
 
-	AllowSelf		bool 	// для себя
-	AllowOwner		bool 	// если автор
-	AllowIfEnrolled	bool 	// если записан
+	AllowOwnerCourse			bool 	// если автор курса
+	AllowOwnerCourseAndQuestion	bool 	// если автор курса и вопроса
+	AllowHasActiveAttempt		bool	// если активная попытка
 
-	DefaultAllow		bool	 // по умолчанию
+	DefaultAllow				bool	 // по умолчанию
 }
 
-func CheckAccess(user *authDomain.UserContext, rule AccessRule, ownerID string, targetUserID string) bool {
+func CheckAccess(user *authDomain.UserContext, rule AccessRule, ownerCourseID string, ownerQuestionID string, hasAttempt bool) bool {
 	if user.Blocked {
 		return false
 	}
@@ -26,13 +26,16 @@ func CheckAccess(user *authDomain.UserContext, rule AccessRule, ownerID string, 
 		return true
 	}
 
-	if rule.AllowSelf && user.UserID == targetUserID {
+	if rule.AllowOwnerCourse && user.UserID == ownerCourseID {
+		return true
+	}
+	if rule.AllowOwnerCourseAndQuestion && user.UserID == ownerCourseID && user.UserID == ownerQuestionID {
 		return true
 	}
 
-	if rule.AllowOwner && user.UserID == ownerID {
-		return true
-	}
+    if rule.AllowHasActiveAttempt && hasAttempt {
+        return true
+    }
 
 	return rule.DefaultAllow
 }

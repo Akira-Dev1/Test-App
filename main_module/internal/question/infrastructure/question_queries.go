@@ -112,7 +112,7 @@ func (r *PostgresRepo) HasAttempt(user *authDomain.UserContext, questionID int) 
         FROM test_attempts ta
         JOIN tests t ON ta.test_id = t.id
         WHERE ta.user_id = $1 
-        AND $2::int = ANY(t.question_ids)
+        AND $2 = ANY(t.question_ids)
         LIMIT 1`, 
 		user.UserID, 
 		questionID,
